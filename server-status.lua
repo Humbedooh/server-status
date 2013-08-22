@@ -1,4 +1,4 @@
-# Mod_status like sscript formod_lua.
+# Mod_status like script formod_lua.
 
 function handle(r)
     local C = r.clock()
