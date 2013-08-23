@@ -114,6 +114,14 @@ r:puts ( ([=[
     var worker_status;
     function refreshWorkerStatus() {
     }
+    
+    function fn(num) {
+        num = num + "";
+        num = num.replace(/(\d)(\d{9})$/, '$1,$2');
+        num = num.replace(/(\d)(\d{6})$/, '$1,$2');
+        num = num.replace(/(\d)(\d{3})$/, '$1,$2');
+        return num;
+    }
 
     function sort(a,b){
         last_col = -1;
@@ -177,7 +185,7 @@ r:puts ( ([=[
                 }
             }
         }
-
+        
         if(l==false)break}f=e;for(h=0;h<g;h++){m=j[h];for(i=0;i<d;i++){if(a.rows[f].cells[i].innerText!=undefined){a.rows[f].cells[i].innerText=m[i]}else{a.rows[f].cells[i].textContent=m[i]}}f++}lastcol=b}var lastcol,lastseq</script>
     <!--Load the AJAX API-->
     <script type="text/javascript" src="https://www.google.com/jsapi"></script>
@@ -417,7 +425,7 @@ r:puts ( ([=[
 
         // Change connection/transfer info
         var obj = document.getElementById("connections")
-        obj.innerHTML = connections + " (" + Math.floor(connections/uptime*1000)/1000 + "/sec)";
+        obj.innerHTML = fn(connections) + " (" + Math.floor(connections/uptime*1000)/1000 + "/sec)";
         var MB = (Math.floor(bytesTransfered/1024/10.24) / 100) + "MB";
         if (bytesTransfered > (1024*1024*1024)) {
             MB = (Math.floor(bytesTransfered/1024/1024/10.24) / 100) + "GB";
