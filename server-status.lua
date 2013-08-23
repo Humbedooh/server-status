@@ -122,6 +122,21 @@ r:puts ( ([=[
         num = num.replace(/(\d)(\d{3})$/, '$1,$2');
         return num;
     }
+    
+    function fnmb(num) {
+        var add = "bytes";
+        var dec = "";
+        var mul = 1;
+        if (num > 1024) { add = "KB"; mul= 1024 }
+        if (num > (1024*1024)) { add = "MB"; mul= 1024*1024 }
+        if (num > (1024*1024*1024)) { add = "GB"; mul= 1024*1024*1024 }
+        if (num > (1024*1024*1024*1024)) { add = "TB"; mul= 1024*1024*1024*1024 }
+        num = num / mul;
+        if (add != "bytes") {
+            dec = "." + Math.floor( (num - Math.floor(num)) * 100 );
+        }
+        return ( fn(Math.floor(num)) + dec + " " + add );
+    }
 
     function sort(a,b){
         last_col = -1;
@@ -426,14 +441,11 @@ r:puts ( ([=[
         // Change connection/transfer info
         var obj = document.getElementById("connections")
         obj.innerHTML = fn(connections) + " (" + Math.floor(connections/uptime*1000)/1000 + "/sec)";
-        var MB = (Math.floor(bytesTransfered/1024/10.24) / 100) + "MB";
-        if (bytesTransfered > (1024*1024*1024)) {
-            MB = (Math.floor(bytesTransfered/1024/1024/10.24) / 100) + "GB";
-        }
-        var KB = (bytesTransfered > 0) ? Math.floor((bytesTransfered/connections)/10.24) / 100 : 0;
-        var KBs = Math.floor((bytesTransfered/uptime)/10.24) / 100;
+        var MB = fnmb(bytesTransfered);
+        var KB = (bytesTransfered > 0) ? fnmb(bytesTransfered/connections) : 0;
+        var KBs = fnmb(bytesTransfered/uptime);
         obj = document.getElementById("transfer")
-        obj.innerHTML = MB + " (" + KB + "kB/req, " + KBs + "KB/sec)";
+        obj.innerHTML = MB + " (" + KB + "/req, " + KBs + "/sec)";
 
         // Active vs reserved threads
         var activeThreads = currentServers * threadsPerProcess;
