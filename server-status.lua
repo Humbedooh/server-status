@@ -11,7 +11,7 @@ function handle(r)
     local maxServers = r.mpm_query(12);
     local maxThreads = r.mpm_query(6);
     local curServers = 0;
-    local uptime = os.time() - (r.started/1000000);
+    local uptime = os.time() - r.started;
     local str = math.floor(uptime/86400) .. " day(s), " .. math.floor((uptime%86400)/3600) .. " hour(s), " .. math.floor((uptime%3600)/60) .. " minute(s), " .. math.floor(uptime %60) .. " second(s)"
     local costs = {}
     local stime = 0;
@@ -487,7 +487,7 @@ r:puts ( ([=[
 </script>
 
 ]=]):format(
-    r.banner, r.server_name, r.banner, os.date("%c",r.started/1000000), str,mpm, r.mpm_query(15), curServers*maxThreads,curServers,maxThreads,maxServers*maxThreads,
+    r.banner, r.server_name, r.banner, os.date("%c",r.started), str,mpm, r.mpm_query(15), curServers*maxThreads,curServers,maxThreads,maxServers*maxThreads,
     maxServers,maxThreads,cons, cons/uptime, bytes/1024/1024, bytes/uptime/1024, bytes/cons/1024,
     curServers, maxServers, maxThreads,
     threadActions[2] or 0, threadActions[4] or 0, threadActions[3] or 0 , threadActions[5] or 0 ,threadActions[8] or 0 ,threadActions[9] or 0 ,
