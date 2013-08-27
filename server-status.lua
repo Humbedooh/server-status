@@ -1,24 +1,34 @@
 # Mod_status like script formod_lua.
 
+-- pre-declare some variables defined at the bottom of this script:
+local status_js, status_css
+
+-- Handler function
 function handle(r)
-    local C = r.clock()
+    
+    -- Parse GET data, if any, and set content type
     local GET = r:parseargs()
     r.content_type = "text/html"
-    local mpm = "prefork"
-    if r.mpm_query(14) == 1 then mpm = "event"
-    elseif r.mpm_query(3) >= 1 then mpm = "worker"
+    
+    -- Fetch server data
+    local mpm = "prefork" -- assume prefork by default
+    if r.mpm_query(14) == 1 then
+        mpm = "event" -- this is event mpm
+    elseif r.mpm_query(3) >= 1 then
+        mpm = "worker" -- it's not event, but it's threaded, we'll assume worker mpm
     end
     local maxServers = r.mpm_query(12);
     local maxThreads = r.mpm_query(6);
     local curServers = 0;
     local uptime = os.time() - r.started;
-    local str = math.floor(uptime/86400) .. " day(s), " .. math.floor((uptime%86400)/3600) .. " hour(s), " .. math.floor((uptime%3600)/60) .. " minute(s), " .. math.floor(uptime %60) .. " second(s)"
     local costs = {}
     local stime = 0;
     local utime = 0;
     local cons = 0;
     local bytes = 0;
     local threadActions = {}
+    
+    -- Fetch process/thread data
     for i=0,maxServers,1 do
         server = r.scoreboard_process(r, i);
         if server then
@@ -38,6 +48,15 @@ function handle(r)
             end
         end
     end
+    
+    -- Try to calculate the CPU max
+    local maxCPU = 5000000
+    while (maxCPU < (stime+utime)) do
+        maxCPU = maxCPU * 2
+    end
+
+    
+    -- If we only need the stats feed, compact it and hand it over
     if GET['view'] and GET['view'] == "worker_status" then
         local tbl = {threadActions[2] or 0, threadActions[4] or 0, threadActions[3] or 0 , threadActions[5] or 0 ,threadActions[8] or 0 ,threadActions[9] or 0}
         tbl[1] = tbl[1]
@@ -51,67 +70,115 @@ function handle(r)
         stime,",",utime .. "\n" .. table.concat(costs, "\n"))
         return apache2.OK
     end
-    local maxCPU = 5000000
-    while (maxCPU < (stime+utime)) do
-        maxCPU = maxCPU * 2
-    end
+    
+    
 
-r:puts ( ([=[
+    -- Print out the HTML for the front page    
+    r:puts ( ([=[
 <html>
   <head>
     <style>
-    html {
-    font-size: 14px;
-    margin: 20px;
-    }
-
-    body {
-        background-color: #fff;
-        color: #036;
-        padding: 0 1em 0 0;
-        margin: 0;
-        font-family: Arial, Helvetica, sans-serif;
-        font-weight: normal;
-    }
-
-    pre, code {
-        font-family: "Courier New", Courier, monospace;
-    }
-
-    strong {
-        font-weight: bold;
-    }
-
-    q, em, var {
-        font-style: italic;
-    }
-    /* h1                     */
-    /* ====================== */
-    h1 {
-        padding: 0.2em;
-        margin: 0;
-        border: 1px solid #405871;
-        background-color: inherit;
-        color: #036;
-        text-decoration: none;
-        font-size: 22px;
-        font-weight: bold;
-    }
-
-    /* h2                     */
-    /* ====================== */
-    h2 {
-        padding: 0.2em 0 0.2em 0.7em;
-        margin: 0 0 0.5em 0;
-        text-decoration: none;
-        font-size: 18px;
-        font-weight: bold;
-        background-color: #405871;
-        color: #fff;
-    }
+    %s
     </style>
+    <!--Load the AJAX API-->
+    <script type="text/javascript" src="https://www.google.com/jsapi"></script>
     <script type="text/javascript">
-    var worker_status;
+        %s
+    </script>
+    <title>Server status for %s</title>
+  </head>
+
+  <body>
+    <h2>Status for %s on %s</h2>
+    <div style="width: 90%%; float: left; clear: both">
+    <b>Server version:</b> %s<br/>
+    <b>Server (re)started:</b> %s<br/>
+    <b>Uptime: </b> <span id='uptime'></span><br/>
+    <b>Server MPM:</b> %s<br/>
+    <b>Generation:</b> %u<br/>
+    <b>Current work-force:</b> <span id="current_threads">%u (%u processes x %u threads)</span><br/>
+    <b>Maximum work-force:</b> <span id="max_threads">%u (%u processes x %u threads)</span><br/>
+    <b>Connections accepted:</b> <span id="connections">%u (%.3f/sec)</span><br/>
+    <b>Bytes transfered:</b> <span id="transfer"> %.2fMB (%.2fkB/sec, %.2fkB/req)</span><br/>
+    </div>
+    <!--Div that will hold the pie chart-->
+    <div id="actions_div" style="float: left;"></div>
+    <div id="traffic_div" style="float: left;"></div>
+    <div style="clear: both"></div>
+    <div id="status_div" style="float: left;"></div>
+    <div id="cpu_div" style="float: left;"></div>
+    <div id="costs_div" style="float: left; width:800px;"></div>
+
+    <div style="clear: both;"><a id="show_link" href="javascript:void(0);" onclick="javascript:showDetails();">Show thread information</a></div>
+
+
+]=]):format(
+    status_css,
+    status_js:format(   curServers, maxServers, maxThreads, threadActions[2] or 0, threadActions[4] or 0,
+                        threadActions[3] or 0 , threadActions[5] or 0 ,threadActions[8] or 0 ,
+                        threadActions[9] or 0 , maxCPU - utime - stime, stime, utime, cons, uptime, bytes
+                    ),
+    
+    r.server_name, r.banner, r.server_name, r.banner, os.date("%c",r.started), mpm, r.mpm_query(15),
+    curServers*maxThreads,curServers,maxThreads,maxServers*maxThreads, maxServers,maxThreads,cons,
+    cons/uptime, bytes/1024/1024, bytes/uptime/1024, bytes/cons/1024
+    ) );
+    
+    r:flush()
+    
+    -- Print out details about each process/thread
+    for i=0,curServers-1,1 do
+        local info = r.scoreboard_process(r, i);
+        if info.pid ~= 0 then
+            r:puts("<div id='srv_",i+1,"' style='display: none; clear: both;'><b>Server #", i+1, ":</b><br/>\n");
+            for k, v in pairs(info) do
+                r:puts(k, " = ", v, "<br/>\n");
+            end
+            r:puts([[<table id="server_]]..i..[[" name="server_]]..i..[[" border='1' style='font-family: arial, helvetica, sans-serif; font-size: 12px; border: 1px solid #666;'><tr>]])
+            local worker = r.scoreboard_worker(r, i, 0);
+            local p = 0;
+            for k, v in pairs(worker) do
+                if k ~= "pid" and k ~= "start_time" and k ~= "stop_time" then
+                    r:puts("<th style='cursor:pointer;' onclick=\"sort(document.getElementById('server_",i,"'), ", p, ");\">",k,"</th>");
+                end
+                p = p + 1;
+            end
+            r:puts[[</tr>]]
+            for j = 0, maxThreads-1 do
+                worker = r.scoreboard_worker(r,i, j)
+                if worker then
+                    
+                    r:puts("<tr>");
+                    for k, v in pairs(worker) do
+                        if ( k == "last_used" and v > 3600) then v = os.date("%c", v/1000000) end
+                        if k == "tid" then v = string.format("0x%x", v) end
+                        if k == "status" then v = ({'D','.','R','W','K','L','D','C','G','I'})[tonumber(v)] or "??" end
+                        if v == "" then v = "N/A" end
+                        if k ~= "pid" and k ~= "start_time" and k ~= "stop_time" then r:puts("<td>",v,"</td>"); end
+                    end
+                    r:puts("</tr>");
+                end
+            end
+            r:puts[[</table><hr/></div>]]
+        end
+    end
+    
+    -- HTML tail
+    r:puts[[
+  </body>
+</html>
+]]
+    return apache2.OK;
+end
+
+
+------------------------------------
+-- JavaScript and CSS definitions --
+------------------------------------
+
+-- Set up some JavaScripts:
+status_js = [[
+var worker_status;
     function refreshWorkerStatus() {
     }
     
@@ -201,34 +268,8 @@ r:puts ( ([=[
             }
         }
         
-        if(l==false)break}f=e;for(h=0;h<g;h++){m=j[h];for(i=0;i<d;i++){if(a.rows[f].cells[i].innerText!=undefined){a.rows[f].cells[i].innerText=m[i]}else{a.rows[f].cells[i].textContent=m[i]}}f++}lastcol=b}var lastcol,lastseq</script>
-    <!--Load the AJAX API-->
-    <script type="text/javascript" src="https://www.google.com/jsapi"></script>
-  </head>
-
-  <body>
-    <h2>Status for %s on %s</h2>
-    <div style="width: 90%%; float: left; clear: both">
-    <b>Server version:</b> %s<br/>
-    <b>Server (re)started:</b> %s<br/>
-    <b>Uptime: </b> %s<br/>
-    <b>Server MPM:</b> %s<br/>
-    <b>Generation:</b> %u<br/>
-    <b>Current work-force:</b> <span id="current_threads">%u (%u processes x %u threads)</span><br/>
-    <b>Maximum work-force:</b> <span id="max_threads">%u (%u processes x %u threads)</span><br/>
-    <b>Connections accepted:</b> <span id="connections">%u (%.3f/sec)</span><br/>
-    <b>Bytes transfered:</b> <span id="transfer"> %.2fMB (%.2fkB/sec, %.2fkB/req)</span><br/>
-    </div>
-    <!--Div that will hold the pie chart-->
-    <div id="actions_div" style="float: left;"></div>
-    <div id="traffic_div" style="float: left;"></div>
-    <div style="clear: both"></div>
-    <div id="status_div" style="float: left;"></div>
-    <div id="cpu_div" style="float: left;"></div>
-    <div id="costs_div" style="float: left; width:800px;"></div>
-
-
-<script type="text/javascript">
+        if(l==false)break}f=e;for(h=0;h<g;h++){m=j[h];for(i=0;i<d;i++){if(a.rows[f].cells[i].innerText!=undefined){a.rows[f].cells[i].innerText=m[i]}else{a.rows[f].cells[i].textContent=m[i]}}f++}lastcol=b}
+        var lastcol,lastseq
         google.load("visualization", "1", {packages:["corechart"]});
 
     var currentServers =    %u;
@@ -462,7 +503,6 @@ r:puts ( ([=[
         cpu_data.removeRow(0);
         cpuSystem = parseInt(cpuSystem);
         cpuUser = parseInt(cpuUser);
-//        cpu_options['title'] = "CPU Usage (" + (cpuUser+cpuSystem) + ")";
 
         while ( (cpuSystem+cpuUser) > CPUmax ) {
             CPUmax = CPUmax * 2;
@@ -485,6 +525,15 @@ r:puts ( ([=[
         status_chart.draw(status_data, status_options);
         traffic_chart.draw(traffic_data, traffic_options);
         
+        // Uptime calculation
+        var uptime_div = document.getElementById('uptime');
+        var u_d = Math.floor(uptime/86400);
+        var u_h = Math.floor((uptime%%86400)/3600);
+        var u_m = Math.floor((uptime%%3600)/60);
+        var u_s = Math.floor(uptime %%60);
+        var str =  u_d + " day" + (u_d != 1 ? "s, " : ", ") + u_h + " hour" + (u_h != 1 ? "s, " : ", ") + u_m + " minute" + (u_m != 1 ? "s, " : ", ") + u_s + " second" + (u_s != 1 ? "s" : "");
+        uptime_div.innerHTML = str
+        
         setTimeout(update_charts, 5000);
     }
 
@@ -504,59 +553,58 @@ r:puts ( ([=[
         if (showing) { link.innerHTML = "Hide thread information"; }
         else { link.innerHTML = "Show thread information"; }
     }
-</script>
-
-]=]):format(
-    r.banner, r.server_name, r.banner, os.date("%c",r.started), str,mpm, r.mpm_query(15), curServers*maxThreads,curServers,maxThreads,maxServers*maxThreads,
-    maxServers,maxThreads,cons, cons/uptime, bytes/1024/1024, bytes/uptime/1024, bytes/cons/1024,
-    curServers, maxServers, maxThreads,
-    threadActions[2] or 0, threadActions[4] or 0, threadActions[3] or 0 , threadActions[5] or 0 ,threadActions[8] or 0 ,threadActions[9] or 0 ,
-     (maxCPU-utime-stime), stime, utime,
-    cons, uptime, bytes
-
-    ) );
-    r:flush()
-    r:puts([[<div style="clear: both;"><a id="show_link" href="javascript:void(0);" onclick="javascript:showDetails();">Show thread information</a></div>]])
-    for i=0,curServers-1,1 do
-        local info = r.scoreboard_process(r, i);
-        if info.pid ~= 0 then
-            r:puts("<div id='srv_",i+1,"' style='display: none; clear: both;'><b>Server #", i+1, ":</b><br/>\n");
-            for k, v in pairs(info) do
-                r:puts(k, " = ", v, "<br/>\n");
-            end
-
-            r:puts([[<table id="server_]]..i..[[" name="server_]]..i..[[" border='1' style='font-family: arial, helvetica, sans-serif; font-size: 12px; border: 1px solid #666;'><tr>]])
-            local worker = r.scoreboard_worker(r, i, 0);
-            local p = 0;
-            for k, v in pairs(worker) do
-                if k ~= "pid" and k ~= "start_time" and k ~= "stop_time" then
-                    r:puts("<th style='cursor:pointer;' onclick=\"sort(document.getElementById('server_",i,"'), ", p, ");\">",k,"</th>");
-                end
-                p = p + 1;
-            end
-            r:puts[[</tr>]]
-            for j = 0, maxThreads-1 do
-                worker = r.scoreboard_worker(r,i, j)
-                if worker then
-                    
-                    r:puts("<tr>");
-                    for k, v in pairs(worker) do
-                        if ( k == "last_used" and v > 3600) then v = os.date("%c", v/1000000) end
-                        if k == "tid" then v = string.format("0x%x", v) end
-                        if k == "status" then v = ({'D','.','R','W','K','L','D','C','G','I'})[tonumber(v)] or "??" end
-                        if v == "" then v = "N/A" end
-                        if k ~= "pid" and k ~= "start_time" and k ~= "stop_time" then r:puts("<td>",v,"</td>"); end
-                    end
-                    r:puts("</tr>");
-                end
-            end
-            r:puts[[</table><hr/></div>]]
-        end
-    end
-    r:puts[[
-  </body>
-</html>
 ]]
-    return apache2.OK;
-end
 
+
+-- Set up some styles:
+status_css = [[
+    html {
+    font-size: 14px;
+    margin: 20px;
+    }
+
+    body {
+        background-color: #fff;
+        color: #036;
+        padding: 0 1em 0 0;
+        margin: 0;
+        font-family: Arial, Helvetica, sans-serif;
+        font-weight: normal;
+    }
+
+    pre, code {
+        font-family: "Courier New", Courier, monospace;
+    }
+
+    strong {
+        font-weight: bold;
+    }
+
+    q, em, var {
+        font-style: italic;
+    }
+    /* h1                     */
+    /* ====================== */
+    h1 {
+        padding: 0.2em;
+        margin: 0;
+        border: 1px solid #405871;
+        background-color: inherit;
+        color: #036;
+        text-decoration: none;
+        font-size: 22px;
+        font-weight: bold;
+    }
+
+    /* h2                     */
+    /* ====================== */
+    h2 {
+        padding: 0.2em 0 0.2em 0.7em;
+        margin: 0 0 0.5em 0;
+        text-decoration: none;
+        font-size: 18px;
+        font-weight: bold;
+        background-color: #405871;
+        color: #fff;
+    }
+]]
