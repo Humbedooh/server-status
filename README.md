@@ -11,7 +11,7 @@ to properly diagnose using plain text information.
 Take a look at http://apaste.info/server-status to see how it works.
 
 ## Requirements ##
-* Apache httpd 2.4
+* Apache httpd 2.4.6 or higher
 * mod_lua (with either Lua 5.1, 5.2 or LuaJIT)
 
 ## Installing ##
