@@ -486,7 +486,7 @@ var worker_status;
             }
            status_data.addRow(workers);
            traffic_data.addRow([eta, 0, bytesDifferenceOut]);
-           if (visit_no > 4 || visit_no == 1) { status_data.removeRow(0); traffic_data.removeRow(0); }
+           if (visit_no > 6 || visit_no == 1) { status_data.removeRow(0); traffic_data.removeRow(0); }
            lines.shift();
            lines.shift();
            lines.shift();
