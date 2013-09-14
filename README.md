@@ -13,6 +13,7 @@ Take a look at http://apaste.info/server-status to see how it works.
 ## Requirements ##
 * Apache httpd 2.4.6 or higher
 * mod_lua (with either Lua 5.1, 5.2 or LuaJIT)
+* mod_status loaded (for enabling traffic statistics)
 
 ## Installing ##
 First, install mod_lua (you can enable this during configure time with --enable-lua)
