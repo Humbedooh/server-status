@@ -8,7 +8,7 @@ This script is an extended version of the known mod_status statistics page for h
 It uses the Google Chart API to visualize many of the elements that are sometimes hard 
 to properly diagnose using plain text information.
 
-Take a look at http://apaste.info/server-status to see how it works.
+Take a look at http://apaste.info/server-status.lua to see how it works.
 
 ## Requirements ##
 * Apache httpd 2.4.6 or higher
