@@ -2,6 +2,7 @@ server-status
 =============
 
 `mod_lua` version of the Apache httpd's mod_status using dynamic charts
+![screenshot](http://www.humbedooh.com/images/serverstatus.png)
 
 ## What does it to? ##
 This script is an extended version of the known mod_status statistics page for httpd.
