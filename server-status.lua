@@ -35,7 +35,9 @@ function handle(r)
         mpm = "event" -- this is event mpm
     elseif r.mpm_query(3) >= 1 then
         mpm = "worker" -- it's not event, but it's threaded, we'll assume worker mpm
-    end
+    elseif r.mpm_query(2) == 1 then
+		mpm = "winnt" -- it's threaded, but not worker nor event, so it's probably winnt
+	end
     local maxServers = r.mpm_query(12);
     local maxThreads = r.mpm_query(6);
     local curServers = 0;
@@ -56,9 +58,9 @@ function handle(r)
                 for j = 0, maxThreads-1, 1 do 
                     worker = r.scoreboard_worker(r, i, j)
                     if worker then
-                        stime = stime + worker.stimes;
-                        utime = utime + worker.utimes;
-                        table.insert(costs, i .. "/" .. worker.tid .. ":" .. (worker.utimes+worker.stimes) .. ";" .. worker.access_count .. ";" .. worker.vhost:gsub(":%d+", "") .. ";" .. worker.request)
+                        stime = stime + (worker.stimes or 0);
+                        utime = utime + (worker.utimes or 0);
+                        table.insert(costs, i .. "/" .. worker.tid .. ":" .. ((worker.utimes or 0) + (worker.stimes or 0)) .. ";" .. worker.access_count .. ";" .. worker.vhost:gsub(":%d+", "") .. ";" .. worker.request)
                         threadActions[worker.status] = (threadActions[worker.status] or 0) + 1
                         cons = cons + worker.access_count;
                         bytes = bytes + worker.bytes_served;
