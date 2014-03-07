@@ -96,8 +96,10 @@ function handle(r)
 
     -- Print out the HTML for the front page
     r:puts ( ([=[
+<!DOCTYPE html>
 <html>
   <head>
+    <meta charset="utf-8">
     <style>
     %s
     </style>
