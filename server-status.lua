@@ -290,7 +290,7 @@ var worker_status;
         }
 
         if(l==false)break}f=e;for(h=0;h<g;h++){m=j[h];for(i=0;i<d;i++){if(a.rows[f].cells[i].innerText!=undefined){a.rows[f].cells[i].innerText=m[i];}else{a.rows[f].cells[i].textContent=m[i]}}f++}lastcol=b;}
-        var lastcol,lastseq
+        var lastcol,lastseq;
         google.load("visualization", "1", {packages:["corechart"]});
 
     var currentServers =    %u;
@@ -335,6 +335,7 @@ var worker_status;
     var traffic_options;
 
     var costs = new Array();
+    var arr;
 
     function setup_charts() {
         // Thread pool chart
@@ -344,7 +345,7 @@ var worker_status;
         pool_data.addColumn('number', 'Workers');
         pool_data.addRows([
           ['Active', currentServers * threadsPerProcess],
-          ['Reserved', (maxServers - currentServers) * threadsPerProcess],
+          ['Reserved', (maxServers - currentServers) * threadsPerProcess]
         ]);
         pool_options = {'title':'Active vs reserved threads',
                        'width':350,
@@ -357,7 +358,7 @@ var worker_status;
         // Thread status chart
         var d = new Date();
         var eta = (d.getHours() + "").replace(/^(\d)$/, "0$1") + ":" + (d.getMinutes() + "").replace(/^(\d)$/, "0$1") + ":" + (d.getSeconds() + "").replace(/^(\d)$/, "0$1");
-        var arr = [eta,threadsIdle,threadsWriting,threadsReading,threadsKeepalive,threadsClosing,threadsGraceful];
+        arr = [eta,threadsIdle,threadsWriting,threadsReading,threadsKeepalive,threadsClosing,threadsGraceful];
         status_data = google.visualization.arrayToDataTable([ ['Time', 'Idle', 'Writing', 'Reading', 'Keepalive', 'Closing', 'Graceful'], arr, arr ]);
         status_chart = new google.visualization.AreaChart(document.getElementById('actions_div'));
         status_options = {
@@ -379,7 +380,7 @@ var worker_status;
         cpu_data.addRows([
           ['Idle', cpuIdle],
           ['System', cpuSystem],
-          ['User', cpuUser],
+          ['User', cpuUser]
         ]);
 
         cpu_options = {'title':'CPU Usage',
@@ -394,7 +395,7 @@ var worker_status;
 
 
         // traffic chart
-        var arr = [eta,0,0];
+        arr = [eta,0,0];
         traffic_data = google.visualization.arrayToDataTable([ ['Time', 'Input', 'Output'], arr, arr ]);
         traffic_chart = new google.visualization.AreaChart(document.getElementById('traffic_div'));
         traffic_options = {
@@ -428,11 +429,11 @@ var worker_status;
             if (costs[tid] && costs[tid]['lastVisit'] != lastVisit) {
                 costs[tid]['show'] = true;
                 costs[tid]['otimes'] = costs[tid]['times'];
-                costs[tid]['times'] = parseInt(times) - (costs[tid]['otimes'] ? costs[tid]['otimes'] : 0);
+                costs[tid]['times'] = parseInt(times,10) - (costs[tid]['otimes'] ? costs[tid]['otimes'] : 0);
                 costs[tid]['lastVisit'] = lastVisit;
             } else {
                 costs[tid] = costs[tid] ? costs[tid] : new Array();
-                costs[tid]['otimes'] = parseInt(times);
+                costs[tid]['otimes'] = parseInt(times,10);
                 costs[tid]['lastVisit'] = lastVisit;
             }
             costs[tid]['url'] = (url.length > 0) ? url : (costs[tid]['url'] ? costs[tid]['url'] : "/");
@@ -474,17 +475,17 @@ var worker_status;
             arr = lines[3].split(",");
             cpuSystemX = arr[0]; cpuUserX = arr[1];
 
-            cpuSystem = Math.abs(parseInt(cpuSystemX) - cpuSystemTotal);
-            cpuUser = Math.abs(parseInt(cpuUserX) - cpuUserTotal);
+            cpuSystem = Math.abs(parseInt(cpuSystemX,10) - cpuSystemTotal);
+            cpuUser = Math.abs(parseInt(cpuUserX,10) - cpuUserTotal);
             cpuSystemTotal += cpuSystem;
             cpuUserTotal += cpuUser;
-            bytesDifferenceOut = (parseInt(bytesTransfered) - bytesBefore) / 5;
+            bytesDifferenceOut = (parseInt(bytesTransfered,10) - bytesBefore) / 5;
             if (bytesDifferenceOut < 0) { bytesDifferenceOut = 0; } // In case we get a bad return value
             var d = new Date();
             var eta = (d.getHours() + "").replace(/^(\d)$/, "0$1") + ":" + (d.getMinutes() + "").replace(/^(\d)$/, "0$1") + ":" + (d.getSeconds() + "").replace(/^(\d)$/, "0$1");
             workers.unshift(eta);
             for (k in workers) {
-                if (k > 0) workers[k] = parseInt(workers[k]);
+                if (k > 0) workers[k] = parseInt(workers[k],10);
             }
            status_data.addRow(workers);
            traffic_data.addRow([eta, 0, bytesDifferenceOut]);
@@ -493,7 +494,7 @@ var worker_status;
            lines.shift();
            lines.shift();
            lines.shift();
-           updateCosts(lines)
+           updateCosts(lines);
         }
         draw_charts();
     }
@@ -501,29 +502,29 @@ var worker_status;
     function draw_charts() {
 
         // Change connection/transfer info
-        var obj = document.getElementById("connections")
+        var obj = document.getElementById("connections");
         obj.innerHTML = fn(connections) + " (" + Math.floor(connections/uptime*1000)/1000 + "/sec)";
         var MB = fnmb(bytesTransfered);
         var KB = (bytesTransfered > 0) ? fnmb(bytesTransfered/connections) : 0;
         var KBs = fnmb(bytesTransfered/uptime);
-        obj = document.getElementById("transfer")
+        obj = document.getElementById("transfer");
         obj.innerHTML = MB + " (" + KB + "/req, " + KBs + "/sec)";
 
         // Active vs reserved threads
         var activeThreads = currentServers * threadsPerProcess;
         var maxThreads = maxServers * threadsPerProcess;
         var reservedThreads = (maxServers-currentServers) * threadsPerProcess;
-        obj = document.getElementById("current_threads")
+        obj = document.getElementById("current_threads");
         obj.innerHTML = activeThreads + " (" + currentServers + " processes x " + threadsPerProcess + " threads)";
-        obj = document.getElementById("max_threads")
+        obj = document.getElementById("max_threads");
         obj.innerHTML = maxThreads + " (" + maxServers + " processes x " + threadsPerProcess + " threads)";
 
         // CPU chart
         cpu_data.removeRow(0);
         cpu_data.removeRow(0);
         cpu_data.removeRow(0);
-        cpuSystem = parseInt(cpuSystem);
-        cpuUser = parseInt(cpuUser);
+        cpuSystem = parseInt(cpuSystem,10);
+        cpuUser = parseInt(cpuUser,10);
 
         while ( (cpuSystem+cpuUser) > CPUmax ) {
             CPUmax = CPUmax * 2;
@@ -535,8 +536,8 @@ var worker_status;
         // Active vs Reserved
         pool_data.removeRow(0);
         pool_data.removeRow(0);
-        activeThreads = parseInt(activeThreads);
-        reservedThreads = parseInt(reservedThreads);
+        activeThreads = parseInt(activeThreads,10);
+        reservedThreads = parseInt(reservedThreads,10);
         pool_data.addRow(["Active", activeThreads]);
         pool_data.addRow(["Reserved", reservedThreads]);
 
@@ -553,7 +554,7 @@ var worker_status;
         var u_m = Math.floor((uptime%%3600)/60);
         var u_s = Math.floor(uptime %%60);
         var str =  u_d + " day" + (u_d != 1 ? "s, " : ", ") + u_h + " hour" + (u_h != 1 ? "s, " : ", ") + u_m + " minute" + (u_m != 1 ? "s, " : ", ") + u_s + " second" + (u_s != 1 ? "s" : "");
-        uptime_div.innerHTML = str
+        uptime_div.innerHTML = str;
 
         setTimeout(update_charts, 5000);
     }
