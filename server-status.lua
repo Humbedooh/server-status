@@ -334,7 +334,7 @@ var worker_status;
     var traffic_data;
     var traffic_options;
 
-    var costs = new Array();
+    var costs = [];
     var arr;
 
     function setup_charts() {
@@ -421,38 +421,40 @@ var worker_status;
 
 
     function updateCosts(arr) {
+        var k;
         for (k in arr) {
             var xarr = arr[k].split(":",2);
             tid = xarr[0]; info = xarr[1];
             xarr = info.split(";");
             times = xarr[0]; lastVisit = xarr[1]; host = xarr[2]; url = xarr[3];
-            if (costs[tid] && costs[tid]['lastVisit'] != lastVisit) {
-                costs[tid]['show'] = true;
-                costs[tid]['otimes'] = costs[tid]['times'];
-                costs[tid]['times'] = parseInt(times,10) - (costs[tid]['otimes'] ? costs[tid]['otimes'] : 0);
-                costs[tid]['lastVisit'] = lastVisit;
+            if (costs[tid] && costs[tid].lastVisit != lastVisit) {
+                costs[tid].show = true;
+                costs[tid].otimes = costs[tid].times;
+                costs[tid].times = parseInt(times,10) - (costs[tid].otimes ? costs[tid].otimes : 0);
+                costs[tid].lastVisit = lastVisit;
             } else {
-                costs[tid] = costs[tid] ? costs[tid] : new Array();
-                costs[tid]['otimes'] = parseInt(times,10);
-                costs[tid]['lastVisit'] = lastVisit;
+                costs[tid] = costs[tid] ? costs[tid] : [];
+                costs[tid].otimes = parseInt(times,10);
+                costs[tid].lastVisit = lastVisit;
             }
-            costs[tid]['url'] = (url.length > 0) ? url : (costs[tid]['url'] ? costs[tid]['url'] : "/");
-            costs[tid]['host'] = host;
+            costs[tid].url = (url.length > 0) ? url : (costs[tid].url ? costs[tid].url : "/");
+            costs[tid].host = host;
         }
-        var sortable = new Array();
+        var sortable = [];
         var x = 0;
+        var tid;
         for (tid in costs) {
-            sortable[x] = [tid, costs[tid]['times'] ? costs[tid]['times'] : 0];
+            sortable[x] = [tid, costs[tid].times ? costs[tid].times : 0];
             x++;
         }
         sortable.sort(function (a,b) { return (a[1] < b[1]); });
         var i = 0;
         var output = "<h4>Most expensive URLs:</h4><ol>";
         for (k=0; k < sortable.length; k++) {
-            var tid = sortable[k][0];
-            if (costs[tid]['show'] && costs[tid]['url'] && costs[tid]['url'].length > 0) {
+            tid = sortable[k][0];
+            if (costs[tid].show && costs[tid].url && costs[tid].url.length > 0) {
                 i++;
-                output = output + "<li><b>" + costs[tid]['host'] + ": " + costs[tid]['url'] + "</b> (" + costs[tid]['times'] + " &micro;s)</li>";
+                output = output + "<li><b>" + costs[tid].host + ": " + costs[tid].url + "</b> (" + costs[tid].times + " &micro;s)</li>";
                 if (i == 10) { break; }
             }
         }
@@ -484,6 +486,7 @@ var worker_status;
             var d = new Date();
             var eta = (d.getHours() + "").replace(/^(\d)$/, "0$1") + ":" + (d.getMinutes() + "").replace(/^(\d)$/, "0$1") + ":" + (d.getSeconds() + "").replace(/^(\d)$/, "0$1");
             workers.unshift(eta);
+            var k;
             for (k in workers) {
                 if (k > 0) workers[k] = parseInt(workers[k],10);
             }
