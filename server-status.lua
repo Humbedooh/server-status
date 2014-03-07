@@ -8,7 +8,7 @@ to you under the Apache License, Version 2.0 (the
 with the License.  You may obtain a copy of the License at
 
     http://www.apache.org/licenses/LICENSE-2.0
-    
+
 Unless required by applicable law or agreed to in writing,
 software distributed under the License is distributed on an
 "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -24,11 +24,11 @@ local status_js, status_css
 
 -- Handler function
 function handle(r)
-    
+
     -- Parse GET data, if any, and set content type
     local GET = r:parseargs()
     r.content_type = "text/html"
-    
+
     -- Fetch server data
     local mpm = "prefork" -- assume prefork by default
     if r.mpm_query(14) == 1 then
@@ -48,14 +48,14 @@ function handle(r)
     local cons = 0;
     local bytes = 0;
     local threadActions = {}
-    
+
     -- Fetch process/thread data
     for i=0,maxServers,1 do
         server = r.scoreboard_process(r, i);
         if server then
             if server.pid > 0 then
                 curServers = curServers + 1
-                for j = 0, maxThreads-1, 1 do 
+                for j = 0, maxThreads-1, 1 do
                     worker = r.scoreboard_worker(r, i, j)
                     if worker then
                         stime = stime + (worker.stimes or 0);
@@ -69,14 +69,14 @@ function handle(r)
             end
         end
     end
-    
+
     -- Try to calculate the CPU max
     local maxCPU = 5000000
     while (maxCPU < (stime+utime)) do
         maxCPU = maxCPU * 2
     end
 
-    
+
     -- If we only need the stats feed, compact it and hand it over
     if GET['view'] and GET['view'] == "worker_status" then
         local tbl = {threadActions[2] or 0, threadActions[4] or 0, threadActions[3] or 0 , threadActions[5] or 0 ,threadActions[8] or 0 ,threadActions[9] or 0}
@@ -91,10 +91,10 @@ function handle(r)
         stime,",",utime .. "\n" .. table.concat(costs, "\n"))
         return apache2.OK
     end
-    
-    
 
-    -- Print out the HTML for the front page    
+
+
+    -- Print out the HTML for the front page
     r:puts ( ([=[
 <html>
   <head>
@@ -139,14 +139,14 @@ function handle(r)
                         threadActions[3] or 0 , threadActions[5] or 0 ,threadActions[8] or 0 ,
                         threadActions[9] or 0 , maxCPU - utime - stime, stime, utime, cons, uptime, bytes
                     ),
-    
+
     r.server_name, r.banner, r.server_name, r.banner, os.date("%c",r.started), mpm, r.mpm_query(15),
     curServers*maxThreads,curServers,maxThreads,maxServers*maxThreads, maxServers,maxThreads,cons,
     cons/uptime, bytes/1024/1024, bytes/uptime/1024, bytes/cons/1024
     ) );
-    
+
     r:flush()
-    
+
     -- Print out details about each process/thread
     for i=0,curServers-1,1 do
         local info = r.scoreboard_process(r, i);
@@ -168,7 +168,7 @@ function handle(r)
             for j = 0, maxThreads-1 do
                 worker = r.scoreboard_worker(r,i, j)
                 if worker then
-                    
+
                     r:puts("<tr>");
                     for k, v in pairs(worker) do
                         if ( k == "last_used" and v > 3600) then v = os.date("%c", v/1000000) end
@@ -183,7 +183,7 @@ function handle(r)
             r:puts[[</table><hr/></div>]]
         end
     end
-    
+
     -- HTML tail
     r:puts[[
   </body>
@@ -202,7 +202,7 @@ status_js = [[
 var worker_status;
     function refreshWorkerStatus() {
     }
-    
+
     function fn(num) {
         num = num + "";
         num = num.replace(/(\d)(\d{9})$/, '$1,$2');
@@ -210,15 +210,15 @@ var worker_status;
         num = num.replace(/(\d)(\d{3})$/, '$1,$2');
         return num;
     }
-    
+
     function fnmb(num) {
         var add = "bytes";
         var dec = "";
         var mul = 1;
-        if (num > 1024) { add = "KB"; mul= 1024 }
-        if (num > (1024*1024)) { add = "MB"; mul= 1024*1024 }
-        if (num > (1024*1024*1024)) { add = "GB"; mul= 1024*1024*1024 }
-        if (num > (1024*1024*1024*1024)) { add = "TB"; mul= 1024*1024*1024*1024 }
+        if (num > 1024) { add = "KB"; mul= 1024; }
+        if (num > (1024*1024)) { add = "MB"; mul= 1024*1024; }
+        if (num > (1024*1024*1024)) { add = "GB"; mul= 1024*1024*1024; }
+        if (num > (1024*1024*1024*1024)) { add = "TB"; mul= 1024*1024*1024*1024; }
         num = num / mul;
         if (add != "bytes") {
             dec = "." + Math.floor( (num - Math.floor(num)) * 100 );
@@ -249,19 +249,19 @@ var worker_status;
             for(i=0;i<d;i++){
                 cell_text="";
                 cell_text=a.rows[h].cells[i].textContent;
-                if(cell_text==undefined){cell_text=a.rows[h].cells[i].innerText}
-                k[i]=cell_text
+                if(cell_text===undefined){cell_text=a.rows[h].cells[i].innerText;}
+                k[i]=cell_text;
             }
-            j[f++]=k
+            j[f++]=k;
         }
         var l=false;
         var m,n;
         if(b!=lastcol) lastseq="A";
         else{
             if(lastseq=="A") lastseq="D";
-            lastseq="A"
+            lastseq="A";
         }
-        
+
         g=c-1;
 
         for(h=0;h<g;h++){
@@ -272,24 +272,24 @@ var worker_status;
                 if(lastseq=="A"){
                     var gt = (m[b]>n[b]) ? true : false;
                     var lt = (m[b]<n[b]) ? true : false;
-                    if (n[b].match(/^(\d+)$/)) { gt = parseInt(m[b]) > parseInt(n[b]) ? true : false; lt = parseInt(m[b]) < parseInt(n[b]) ? true : false; }
+                    if (n[b].match(/^(\d+)$/)) { gt = parseInt(m[b], 10) > parseInt(n[b], 10) ? true : false; lt = parseInt(m[b], 10) < parseInt(n[b], 10) ? true : false; }
                     if (sort_reverse) {gt = (!gt); lt = (!lt);}
                     if(gt){
                         j[i+1]=m;
                         j[i]=n;
-                        l=true
-                    }   
+                        l=true;
+                    }
                 }
                 else{
                     if(lt){
                     j[i+1]=m;
                     j[i]=n;
-                    l=true
+                    l=true;
                 }
             }
         }
-        
-        if(l==false)break}f=e;for(h=0;h<g;h++){m=j[h];for(i=0;i<d;i++){if(a.rows[f].cells[i].innerText!=undefined){a.rows[f].cells[i].innerText=m[i]}else{a.rows[f].cells[i].textContent=m[i]}}f++}lastcol=b}
+
+        if(l==false)break}f=e;for(h=0;h<g;h++){m=j[h];for(i=0;i<d;i++){if(a.rows[f].cells[i].innerText!=undefined){a.rows[f].cells[i].innerText=m[i];}else{a.rows[f].cells[i].textContent=m[i]}}f++}lastcol=b;}
         var lastcol,lastseq
         google.load("visualization", "1", {packages:["corechart"]});
 
@@ -329,11 +329,11 @@ var worker_status;
     var cpu_data;
     var cpu_chart;
     var cpu_options;
-    
+
     var traffic_chart;
     var traffic_data;
     var traffic_options;
-    
+
     var costs = new Array();
 
     function setup_charts() {
@@ -371,7 +371,7 @@ var worker_status;
                   }
 
             };
-        
+
         // CPU time chart
         cpu_data = new google.visualization.DataTable();
         cpu_data.addColumn('string', 'Element');
@@ -391,8 +391,8 @@ var worker_status;
                         }
                       };
         cpu_chart = new google.visualization.BarChart(document.getElementById('cpu_div'));
-        
-        
+
+
         // traffic chart
         var arr = [eta,0,0];
         traffic_data = google.visualization.arrayToDataTable([ ['Time', 'Input', 'Output'], arr, arr ]);
@@ -418,7 +418,7 @@ var worker_status;
     else { xmlhttp=new ActiveXObject("Microsoft.XMLHTTP"); }
 
 
-   
+
     function updateCosts(arr) {
         for (k in arr) {
             var xarr = arr[k].split(":",2);
@@ -458,7 +458,7 @@ var worker_status;
         output = output + "</ol>";
         document.getElementById("costs_div").innerHTML = output;
     }
-   
+
     function update_charts() {
         visit_no++;
         if (xmlhttp && typeof(xmlhttp) != 'undefined') {
@@ -473,7 +473,7 @@ var worker_status;
             currentServers = arr[0]; maxServers = arr[1]; threadsPerProcess = arr[2];
             arr = lines[3].split(",");
             cpuSystemX = arr[0]; cpuUserX = arr[1];
-            
+
             cpuSystem = Math.abs(parseInt(cpuSystemX) - cpuSystemTotal);
             cpuUser = Math.abs(parseInt(cpuUserX) - cpuUserTotal);
             cpuSystemTotal += cpuSystem;
@@ -545,7 +545,7 @@ var worker_status;
         cpu_chart.draw(cpu_data, cpu_options);
         status_chart.draw(status_data, status_options);
         traffic_chart.draw(traffic_data, traffic_options);
-        
+
         // Uptime calculation
         var uptime_div = document.getElementById('uptime');
         var u_d = Math.floor(uptime/86400);
@@ -554,7 +554,7 @@ var worker_status;
         var u_s = Math.floor(uptime %%60);
         var str =  u_d + " day" + (u_d != 1 ? "s, " : ", ") + u_h + " hour" + (u_h != 1 ? "s, " : ", ") + u_m + " minute" + (u_m != 1 ? "s, " : ", ") + u_s + " second" + (u_s != 1 ? "s" : "");
         uptime_div.innerHTML = str
-        
+
         setTimeout(update_charts, 5000);
     }
 
