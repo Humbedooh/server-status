@@ -132,7 +132,10 @@ function handle(r)
     <div id="cpu_div" style="float: left;"></div>
     <div id="costs_div" style="float: left; width:800px;"></div>
 
-    <div style="clear: both;"><a id="show_link" href="javascript:void(0);" onclick="javascript:showDetails();">Show thread information</a></div>
+    <div style="clear: both;">
+        <a id="show_link" href="javascript:void(0);" onclick="javascript:showDetails();">Show thread information</a><br>
+        <a id="show_modules_link" href="javascript:void(0);" onclick="javascript:show_modules();">Show loaded modules</a>
+    </div>
 
 
 ]=]):format(
@@ -153,7 +156,7 @@ function handle(r)
     for i=0,curServers-1,1 do
         local info = r.scoreboard_process(r, i);
         if info.pid ~= 0 then
-            r:puts("<div id='srv_",i+1,"' style='display: none; clear: both;'><b>Server #", i+1, ":</b><br/>\n");
+            r:puts("<div id='srv_",i+1,"' style='display: none; clear: both;' class='servers'><b>Server #", i+1, ":</b><br/>\n");
             for k, v in pairs(info) do
                 r:puts(k, " = ", v, "<br/>\n");
             end
@@ -185,6 +188,14 @@ function handle(r)
             r:puts[[</table><hr/></div>]]
         end
     end
+
+    -- Get loaded modules
+    r:puts("<div id='modules'>")
+    local loaded_modules
+    for k, module in pairs(r:loaded_modules()) do
+        r:puts("<div>" .. module .. "</div>\n")
+    end
+    r:puts("</div>")
 
     -- HTML tail
     r:puts[[
@@ -580,6 +591,20 @@ var worker_status;
         if (showing) { link.innerHTML = "Hide thread information"; }
         else { link.innerHTML = "Show thread information"; }
     }
+
+    var showing_modules = false;
+    function show_modules() {
+
+        var obj = document.getElementById("modules");
+        if (obj) {
+            if (showing_modules) { obj.style.display = "none"; }
+            else { obj.style.display = "block"; }
+        }
+        var link = document.getElementById("show_modules_link");
+        showing_modules = (!showing_modules);
+        if (showing_modules) { link.innerHTML = "Hide loaded modules"; }
+        else { link.innerHTML = "Show loaded modules"; }
+    }
 ]]
 
 
@@ -634,4 +659,19 @@ status_css = [[
         background-color: #405871;
         color: #fff;
     }
+
+    #modules {
+        margin-top:20px;
+        display:none;
+        width:400px;
+    }
+
+    #modules div:nth-of-type(even), .servers table tr:nth-of-type(even){
+        background-color:#fff;
+    }
+
+    #modules div:nth-of-type(odd), .servers table tr:nth-of-type(odd){
+        background-color:#cecece;
+    }
+
 ]]
