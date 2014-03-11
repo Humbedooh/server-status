@@ -302,7 +302,7 @@ var worker_status;
             }
         }
 
-        if(l==false)break}f=e;for(h=0;h<g;h++){m=j[h];for(i=0;i<d;i++){if(a.rows[f].cells[i].innerText!=undefined){a.rows[f].cells[i].innerText=m[i];}else{a.rows[f].cells[i].textContent=m[i]}}f++}lastcol=b;}
+        if(l===false)break;}f=e;for(h=0;h<g;h++){m=j[h];for(i=0;i<d;i++){if(a.rows[f].cells[i].innerText!==undefined){a.rows[f].cells[i].innerText=m[i];}else{a.rows[f].cells[i].textContent=m[i];}}f++;}lastcol=b;}
         var lastcol,lastseq;
         google.load("visualization", "1", {packages:["corechart"]});
 
