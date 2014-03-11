@@ -252,7 +252,7 @@ var worker_status;
         }
         var c,d,e,f,g,h,i;
         c=a.rows.length;
-        if(c<1)return;
+        if(c<1){ return; }
         d=a.rows[1].cells.length;
         e=1;
         var j=new Array(c);
@@ -301,7 +301,9 @@ var worker_status;
                     }
                 }
             }
-            if(l===false)break;
+            if(l===false){
+                break;
+            }
         }
         f=e;
         for(h=0;h<g;h++){
