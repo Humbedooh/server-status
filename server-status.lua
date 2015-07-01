@@ -36,8 +36,8 @@ function handle(r)
     elseif r.mpm_query(3) >= 1 then
         mpm = "worker" -- it's not event, but it's threaded, we'll assume worker mpm
     elseif r.mpm_query(2) == 1 then
-		mpm = "winnt" -- it's threaded, but not worker nor event, so it's probably winnt
-	end
+        mpm = "winnt" -- it's threaded, but not worker nor event, so it's probably winnt
+    end
     local maxServers = r.mpm_query(12);
     local maxThreads = r.mpm_query(6);
     local curServers = 0;
