@@ -115,6 +115,7 @@ function handle(r)
     <h2>Status for %s on %s</h2>
     <div style="width: 90%%; float: left; clear: both">
     <b>Server version:</b> %s<br/>
+    <b>Server Built:</b> %s<br/>
     <b>Server (re)started:</b> %s<br/>
     <b>Uptime: </b> <span id='uptime'></span><br/>
     <b>Server MPM:</b> %s<br/>
@@ -145,7 +146,7 @@ function handle(r)
                         threadActions[9] or 0 , maxCPU - utime - stime, stime, utime, cons, uptime, bytes
                     ),
 
-    r.server_name, r.banner, r.server_name, r.banner, os.date("%c",r.started), mpm, r.mpm_query(15),
+    r.server_name, r.banner, r.server_name, r.banner, r.server_built, os.date("%c",r.started), mpm, r.mpm_query(15),
     curServers*maxThreads,curServers,maxThreads,maxServers*maxThreads, maxServers,maxThreads,cons,
     cons/uptime, bytes/1024/1024, bytes/uptime/1024, bytes/cons/1024
     ) );
