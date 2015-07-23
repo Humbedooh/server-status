@@ -29,6 +29,41 @@ function handle(r)
     local GET = r:parseargs()
     r.content_type = "text/html"
 
+    if GET['module'] then
+        r:puts [[
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <style>
+    ]]
+    r:puts (status_css)
+    r:puts [[
+    </style>
+    <!--Load the AJAX API-->
+    <script type="text/javascript" src="https://www.google.com/jsapi"></script>
+    <title>Module information</title>
+  </head>
+
+  <body>
+]]
+        r:puts( ("<h3>Details for module %s</h3>\n"):format(GET['module']) )
+        -- Queries the server for information about a module
+        local mod = r.module_info(GET['module'])
+        if mod then
+            for k, v in pairs(mod.commands) do
+                -- print out all directives accepted by this module
+                r:puts( ("<b>%s:</b> %s<br>\n"):format(r:escape_html(k), v))
+            end
+        end
+            -- HTML tail
+        r:puts[[
+  </body>
+</html>
+]]
+        return apache2.OK;
+    end
+
     -- Fetch server data
     local mpm = "prefork" -- assume prefork by default
     if r.mpm_query(14) == 1 then
@@ -194,7 +229,7 @@ function handle(r)
     r:puts("<div id='modules'>")
     local loaded_modules
     for k, module in pairs(r:loaded_modules()) do
-        r:puts("<div>" .. module .. "</div>\n")
+        r:puts("<div><a href=\"?module=" .. module .. "\" target=\"_blank\">" .. module .. "</a></div>\n")
     end
     r:puts("</div>")
 
