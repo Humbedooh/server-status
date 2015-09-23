@@ -4,7 +4,7 @@ server-status
 `mod_lua` version of the Apache httpd's mod_status using dynamic charts
 ![screenshot](http://www.humbedooh.com/images/serverstatus.png?foo)
 
-## What does it to? ##
+## What does it do? ##
 This script is an extended version of the known mod_status statistics page for httpd.
 It uses the Google Chart API to visualize many of the elements that are sometimes hard 
 to properly diagnose using plain text information.
