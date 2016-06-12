@@ -86,12 +86,12 @@ function handle(r)
 
     -- Fetch process/thread data
     for i=0,maxServers,1 do
-        server = r.scoreboard_process(r, i);
+        local server = r.scoreboard_process(r, i);
         if server then
             if server.pid > 0 then
                 curServers = curServers + 1
                 for j = 0, maxThreads-1, 1 do
-                    worker = r.scoreboard_worker(r, i, j)
+                    local worker = r.scoreboard_worker(r, i, j)
                     if worker then
                         stime = stime + (worker.stimes or 0);
                         utime = utime + (worker.utimes or 0);
