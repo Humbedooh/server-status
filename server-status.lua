@@ -22,7 +22,6 @@ under the License.
 -- pre-declare some variables defined at the bottom of this script:
 local status_js, status_css, quokka_js
 
-
 -- quick and dirty JSON conversion
 local function quickJSON(input)
     if type(input) == "table" then
@@ -340,7 +339,8 @@ function getAsync(theUrl, xstate, callback) {
 var actionCache = [];
 var trafficCache = [];
 var lastBytes = 0;
-var updateSpeed = 2.5;
+var updateSpeed = 2; // How fast do charts update?
+var cpumax = 250000; // random cpu max(?)
 
 function refreshCharts(json, state) {
     if (json && json.states) {
@@ -397,7 +397,6 @@ function refreshCharts(json, state) {
         quokkaCircle("status_div", [ { title: 'Active', value: (json.threads*json.servers)}, { title: 'Reserve', value: (json.threads*(json.maxServers-json.servers))} ], { title: "Worker pool", hires: true});
         
         // CPU info
-        var cpumax = 250000; // what did this used to be???!
         while ( (json.systime+json.utime) > cpumax ) {
             cpumax = cpumax * 2;
         }
