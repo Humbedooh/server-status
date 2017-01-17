@@ -935,7 +935,7 @@ function quokkaLines(id, titles, values, options, sums) {
     
     // Draw horizontal lines
     
-    for (x = 0; x <= numLines; x++) {
+    for (x = -1; x <= numLines; x++) {
         ctx.beginPath();
         var y = 30 + (((canvas.height-40-lheight) / (numLines+1)) * (x+1));
         ctx.moveTo(wspace*0.75, y);
@@ -952,9 +952,9 @@ function quokkaLines(id, titles, values, options, sums) {
             val = quokka_fnmb(val);
         }
         ctx.textAlign = "left";
-        ctx.fillText( val,canvas.width - lwidth - 10, y-4);
+        ctx.fillText( val,canvas.width - lwidth - 10, y+8);
         ctx.textAlign = "right";
-        ctx.fillText( val,wspace-30, y-4);
+        ctx.fillText( val,wspace-30, y+8);
         ctx.closePath();
     }
     
