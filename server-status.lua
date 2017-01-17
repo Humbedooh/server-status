@@ -988,14 +988,12 @@ function quokkaLines(id, titles, values, options, sums) {
     
     
     // Some pre-calculations of steps
-    var step = (canvas.width - lwidth - 20) / (values.length+1);
-    var smallstep = (step / titles.length) - 2;
+    var step = (rectwidth) / (values.length > 1 ? values.length-1:1);
     
     // Draw X values if noX isn't set:
     if (noX != true) {
         ctx.beginPath();
         for (var i = 0; i < values.length; i++) {
-            smallstep = (step / (values[i].length-1)) - 2;
             zz = 1
             var x = (wspace*0.75) + ((step) * i);
             var y = canvas.height - lheight + 5;
