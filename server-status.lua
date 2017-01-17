@@ -339,7 +339,8 @@ function getAsync(theUrl, xstate, callback) {
 var actionCache = [];
 var trafficCache = [];
 var lastBytes = 0;
-var updateSpeed = 2; // How fast do charts update?
+var updateSpeed = 5; // How fast do charts update?
+var maxRecords = 15; // How many records to show per chart
 var cpumax = 250000; // random cpu max(?)
 
 function refreshCharts(json, state) {
@@ -353,7 +354,7 @@ function refreshCharts(json, state) {
         // Shift if more than 10 entries in cache
         json.states['timestamp'] = ts;
         actionCache.push(json.states);
-        if (actionCache.length > 10) {
+        if (actionCache.length > maxRecords) {
             actionCache.shift();
         }
         
@@ -379,7 +380,7 @@ function refreshCharts(json, state) {
             bytes: bytesThisTurn/updateSpeed
         };
         trafficCache.push(el);
-        if (trafficCache.length > 10) {
+        if (trafficCache.length > maxRecords) {
             trafficCache.shift();
         }
         
