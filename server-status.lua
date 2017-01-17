@@ -373,7 +373,7 @@ function refreshCharts(json, state) {
         var bytesThisTurn = json.bytes - lastBytes
         if (lastBytes == 0 || bytesThisTurn < 0) {
             if (bytesThisTurn < 0) {
-                negativeBytes += bytesThisTurn
+                negativeBytes -= bytesThisTurn
             }
             bytesThisTurn = 0;
         }
