@@ -155,7 +155,7 @@ function handle(r)
     while (maxCPU < (stime+utime)) do
         maxCPU = maxCPU * 2
     end
-
+    
     -- If we only need the stats feed, compact it and hand it over
     if GET['view'] and GET['view'] == "json_status" then
         --threadsKeepalive,threadsClosing,threadsIdle,threadsWriting,threadsReading,threadsGraceful
@@ -339,6 +339,7 @@ function getAsync(theUrl, xstate, callback) {
 var actionCache = [];
 var trafficCache = [];
 var lastBytes = 0;
+var negativeBytes = 0; // cache for proc reloads, which skews traffic
 var updateSpeed = 5; // How fast do charts update?
 var maxRecords = 15; // How many records to show per chart
 var cpumax = 250000; // random cpu max(?)
@@ -371,9 +372,16 @@ function refreshCharts(json, state) {
         // Get traffic, figure out how much it was this time (0 if just started!)
         var bytesThisTurn = json.bytes - lastBytes
         if (lastBytes == 0 || bytesThisTurn < 0) {
+            if (bytesThisTurn < 0) {
+                negativeBytes += bytesThisTurn
+            }
             bytesThisTurn = 0;
         }
         lastBytes = json.bytes
+        if (bytesThisTurn >= negativeBytes) {
+            bytesThisTurn -= negativeBytes;
+            negativeBytes = 0;
+        }
         // Push a new element into cache, prune cache
         var el = {
             timestamp: ts,
