@@ -2,11 +2,11 @@ server-status
 =============
 
 `mod_lua` version of the Apache httpd's mod_status using dynamic charts
-![screenshot](http://www.humbedooh.com/images/serverstatus.png?foo)
+![screenshot](https://raw.githubusercontent.com/Humbedooh/server-status/master/teaser.png)
 
 ## What does it do? ##
 This script is an extended version of the known mod_status statistics page for httpd.
-It uses the Google Chart API to visualize many of the elements that are sometimes hard 
+It uses the simple Quokka Chart API to visualize many of the elements that are sometimes hard 
 to properly diagnose using plain text information.
 
 Take a look at http://apaste.info/server-status.lua to see how it works.
