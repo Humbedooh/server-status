@@ -138,6 +138,7 @@ function handle(r)
     local bytes = 0;
     local threadActions = {}
     local keepalives = 0
+    local procs = {}
 
     -- Fetch process/thread data
     for i=0,maxServers,1 do
@@ -146,6 +147,9 @@ function handle(r)
             if server.pid > 0 then
                 keepalives = keepalives + (server.keepalive or 0)
                 curServers = curServers + 1
+                procs[tostring(server.pid)] = {
+                    bytes = 0
+                }
                 for j = 0, maxThreads-1, 1 do
                     local worker = r.scoreboard_worker(r, i, j)
                     if worker then
@@ -162,6 +166,7 @@ function handle(r)
                         threadActions[worker.status] = (threadActions[worker.status] or 0) + 1
                         cons = cons + worker.access_count;
                         bytes = bytes + worker.bytes_served;
+                        procs[tostring(server.pid)].bytes = procs[tostring(server.pid)].bytes + worker.bytes_served
                     end
                 end
             end
@@ -186,6 +191,7 @@ function handle(r)
                 reading = threadActions[3] or 0,
                 graceful = threadActions[9] or 0
             },
+            processes = procs,
             mpm = mpm,
             uptime = uptime,
             connections = cons,
@@ -366,6 +372,7 @@ function getAsync(theUrl, xstate, callback) {
 
 var actionCache = [];
 var trafficCache = [];
+var processes = {};
 var lastBytes = 0;
 var negativeBytes = 0; // cache for proc reloads, which skews traffic
 var updateSpeed = 5; // How fast do charts update?
@@ -407,18 +414,25 @@ function refreshCharts(json, state) {
         
         
         // Get traffic, figure out how much it was this time (0 if just started!)
-        var bytesThisTurn = json.bytes - lastBytes
-        if (lastBytes == 0 || bytesThisTurn < 0) {
-            if (bytesThisTurn < 0) {
-                negativeBytes -= bytesThisTurn
+        var bytesThisTurn = 0;
+        for (var pid in json.processes) {
+            var proc = json.processes[pid];
+            // if we haven't seen this proc before, ignore its bytes first time
+            if (!processes[pid]) {
+                processes[pid] = {
+                    bytes: proc.bytes
+                }
+            } else {
+                bytesThisTurn += proc.bytes - processes[pid].bytes;
+                processes[pid].bytes = proc.bytes;
             }
+        }
+        
+        if (lastBytes == 0 ) {
             bytesThisTurn = 0;
         }
-        lastBytes = json.bytes
-        if (bytesThisTurn >= negativeBytes) {
-            bytesThisTurn -= negativeBytes;
-            negativeBytes = 0;
-        }
+        lastBytes = 1;
+
         // Push a new element into cache, prune cache
         var el = {
             timestamp: ts,
