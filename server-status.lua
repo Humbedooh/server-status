@@ -742,7 +742,7 @@ for (var x=0;x<numColorRows;x++) {
         var hex = quokka_internal_rgb2hex(color.r*255, color.g*255, color.b*255);
         
         // Darker variant for gradients:
-        var dhex = quokka_internal_rgb2hex(color.r*111, color.g*111, color.b*111);
+        var dhex = quokka_internal_rgb2hex(color.r*131, color.g*131, color.b*131);
         
         colors.push([hex, dhex, color]);
     }
@@ -774,15 +774,20 @@ function quokkaCircle(id, tags, opts) {
     var stop = 0;
     var radius = (canvas.height*0.75)/2;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.shadowBlur = 4;
-    ctx.shadowOffsetX = 0.5;
-    ctx.shadowOffsetY = 0.6;
-    ctx.shadowColor = "#666";
-    
+    ctx.beginPath();
+    ctx.shadowBlur = 6;
+    ctx.shadowOffsetX = 6;
+    ctx.shadowOffsetY = 6;
+    ctx.shadowColor = "#555";
+    ctx.lineWidth = (opts && opts.hires) ? 6 : 2;
+    ctx.strokeStyle = "#222";
     ctx.arc((canvas.width-140)/2,canvas.height/2,radius, 0, Math.PI * 2);
     ctx.closePath();
     ctx.stroke();
+    ctx.fill();
     ctx.shadowBlur = 0;
+    ctx.shadowOffsetY = 0;
+    ctx.shadowOffsetX = 0;
     
     
     // Draw a title if set:
@@ -811,10 +816,10 @@ function quokkaCircle(id, tags, opts) {
         ctx.stroke();
         
         // Add color gradient
-        var grd=ctx.createLinearGradient(0,0,170,0);
+        var grd=ctx.createLinearGradient(0,canvas.height*0.2,0,canvas.height);
         grd.addColorStop(0,colors[k % colors.length][1]);
         grd.addColorStop(1,colors[k % colors.length][0]);
-        ctx.fillStyle = grd
+        ctx.fillStyle = grd;
         ctx.fill();
         begin = stop;
         
@@ -1057,6 +1062,7 @@ function quokkaLines(id, titles, values, options, sums) {
     for (k in values) { if (k > 0) { stacks[k] = 0; pstacks[k] = canvas.height - 40 - lheight; }}
     
     for (k in titles) {
+        var maxY = 0, minY = 99999;
         ctx.beginPath();
         var color = colors[k % colors.length][0];
         var f = parseInt(k) + 1;
@@ -1093,6 +1099,8 @@ function quokkaLines(id, titles, values, options, sums) {
                     pstacks[i] = stacks[i];
                     stacks[i] += (((value-min) / (max-min)) * (canvas.height - 40- lheight));
                 }
+                if (y > maxY) maxY = y;
+                if (y < minY) minY = y;
                 // Draw curved lines??
                 /* We'll do: (x1,y1)-----(x1.5,y1)
                  *                          |
@@ -1143,11 +1151,14 @@ function quokkaLines(id, titles, values, options, sums) {
             }
             var pvalY = y;
             var pvalX = x;
+            if (y > maxY) maxY = y;
+            if (y < minY) minY = y;
             for (i in values) {
                 var l = values.length - i - 1;
                 x = (wspace*0.75) + (step*l);
                 y = canvas.height - 10 - lheight - pstacks[l];
-
+                if (y > maxY) maxY = y;
+                if (y < minY) minY = y;
                 if (curve) {
                     ctx.bezierCurveTo((pvalX + x) / 2, pvalY, (pvalX + x) / 2, y, x, y);
                     pvalX = x;
@@ -1159,8 +1170,11 @@ function quokkaLines(id, titles, values, options, sums) {
             }
             ctx.lineTo((wspace*0.75), py - pstacks[0]);
             ctx.lineWidth = 0;
+            var grad = ctx.createLinearGradient(0, minY, 0, maxY);
+            grad.addColorStop(0.25, colors[k % colors.length][0])
+            grad.addColorStop(1, colors[k % colors.length][1])
             ctx.strokeStyle = colors[k % colors.length][0];
-            ctx.fillStyle = colors[k % colors.length][0];
+            ctx.fillStyle = grad;
             ctx.fill();
             ctx.fillStyle = "#000"
             ctx.strokeStyle = "#000"
