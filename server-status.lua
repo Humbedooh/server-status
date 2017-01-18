@@ -144,12 +144,14 @@ function handle(r)
     for i=0,maxServers,1 do
         local server = r.scoreboard_process(r, i);
         if server then
-            if server.pid > 0 then
+            if server.pid then
                 keepalives = keepalives + (server.keepalive or 0)
                 curServers = curServers + 1
-                procs[tostring(server.pid)] = {
-                    bytes = 0
-                }
+                if server.pid > 0 then
+                    procs[tostring(server.pid)] = {
+                        bytes = 0
+                    }
+                end
                 for j = 0, maxThreads-1, 1 do
                     local worker = r.scoreboard_worker(r, i, j)
                     if worker then
@@ -163,10 +165,12 @@ function handle(r)
                             vhost = worker.vhost:gsub(":%d+", ""),
                             request = worker.request
                         })
-                        threadActions[worker.status] = (threadActions[worker.status] or 0) + 1
                         cons = cons + worker.access_count;
                         bytes = bytes + worker.bytes_served;
-                        procs[tostring(server.pid)].bytes = procs[tostring(server.pid)].bytes + worker.bytes_served
+                        if server.pid > 0 then
+                            threadActions[worker.status] = (threadActions[worker.status] or 0) + 1
+                            procs[tostring(server.pid)].bytes = procs[tostring(server.pid)].bytes + worker.bytes_served
+                        end
                     end
                 end
             end
