@@ -9,7 +9,7 @@ This script is an extended version of the known mod_status statistics page for h
 It uses the simple Quokka Chart API to visualize many of the elements that are sometimes hard 
 to properly diagnose using plain text information.
 
-Take a look at http://apaste.info/server-status.lua to see how it works.
+Take a look at https://www.apache.org/server-status to see how it works.
 
 ## Requirements ##
 * Apache httpd 2.4.6 or higher
@@ -31,3 +31,11 @@ to your appropriate VirtualHost configuration:
     AddHandler lua-script .lua
 
 Then just put the `.lua` script somewhere in your document root and visit the page.
+
+## Configuring
+There are a few options inside the Lua script that can be set to `true` or `false`:
+
+- `show_warning`: Whether or not to show a notice that this page is there on purpose.
+- `redact_ips`: Whether or not to replace the last few bits of every IP with 'x.x'
+- `show_modules`: Whether to show the list of loaded modules or not
+- `show_threads`: Whether to show thread details or not.
