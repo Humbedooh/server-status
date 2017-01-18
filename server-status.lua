@@ -27,6 +27,7 @@ local warning_banner = [[
     </div>
 ]]
 local show_warning = false -- whether to display the above warning/notice on the page
+local show_modules = false -- Whether to list loaded modules or not
 
 -- pre-declare some variables defined at the bottom of this script:
 local status_js, status_css, quokka_js
@@ -101,7 +102,6 @@ local function modInfo(r, modname)
     </html>
     ]]
     end
-return apache2.OK;
 end
 
 
@@ -111,6 +111,11 @@ function handle(r)
     
     -- Parse GET data, if any, and set content type
     local GET = r:parseargs()
+    
+    if GET['module'] then
+        modInfo(r, GET['module'])
+        return apache2.OK
+    end
 
     -- Fetch server data
     local mpm = "prefork" -- assume prefork by default
@@ -304,12 +309,13 @@ function handle(r)
     end
 
     -- Get loaded modules
-    r:puts("<div id='modules'>")
-    local loaded_modules
-    for k, module in pairs(r:loaded_modules()) do
-        r:puts("<div><a href=\"?module=" .. module .. "\" target=\"_blank\">" .. module .. "</a></div>\n")
+    if show_modules then
+        r:puts("<div id='modules'>")
+        for k, module in pairs(r:loaded_modules()) do
+            r:puts("<div><a href=\"?module=" .. module .. "\" target=\"_blank\">" .. module .. "</a></div>\n")
+        end
+        r:puts("</div>")
     end
-    r:puts("</div>")
 
     -- HTML tail
     r:puts[[
