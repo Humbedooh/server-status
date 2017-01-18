@@ -221,16 +221,18 @@ function handle(r)
     <h2>Status for %s on %s</h2>
     %s
     <div style="width: 90%%; float: left; clear: both; margin-bottom: 25px;">
-    <b>Server version:</b> %s<br/>
-    <b>Server Built:</b> %s<br/>
-    <b>Server (re)started:</b> %s<br/>
-    <b>Uptime: </b> <span id='uptime'></span><br/>
-    <b>Server MPM:</b> %s <span id='mpminfo'></span><br/>
-    <b>Generation:</b> %u<br/>
-    <b>Current work-force:</b> <span id="current_threads">%u (%u processes x %u threads)</span><br/>
-    <b>Maximum work-force:</b> <span id="max_threads">%u (%u processes x %u threads)</span><br/>
-    <b>Connections accepted:</b> <span id="connections">%u (%.3f/sec)</span><br/>
-    <b>Bytes transfered:</b> <span id="transfer"> %.2fMB (%.2fkB/sec, %.2fkB/req)</span><br/>
+    <table cellpadding="0" cellspacing="0">
+    <tr><td><b>Server version:</b></td><td>%s</td></tr>
+    <tr><td><b>Server Built:</b></td><td>%s</td></tr>
+    <tr><td><b>Server (re)started:</b></td><td>%s</td></tr>
+    <tr><td><b>Uptime: </b></td><td><span id='uptime'></span></td></tr>
+    <tr><td><b>Server MPM:</b></td><td>%s <span id='mpminfo'></span></td></tr>
+    <tr><td><b>Generation:</b></td><td>%u</td></tr>
+    <tr><td><b>Current work-force:</b></td><td><span id="current_threads">%u (%u processes x %u threads)</span></td></tr>
+    <tr><td><b>Maximum work-force:</b></td><td><span id="max_threads">%u (%u processes x %u threads)</span></td></tr>
+    <tr><td><b>Connections accepted:</b></td><td><span id="connections">%u (%.3f/sec)</span></td></tr>
+    <tr><td><b>Bytes transfered:</b></td><td><span id="transfer"> %.2fMB (%.2fkB/sec, %.2fkB/req)</span></td></tr>
+    </table>
     </div>
     
     <!--Div that will hold the pie chart-->
@@ -1514,5 +1516,19 @@ status_css = [[
     #modules div:nth-of-type(odd), .servers table tr:nth-of-type(odd){
         background-color:#cecece;
     }
-
+    tr:nth-child(odd) {
+        background: #F6F6F6;
+    }
+    tr:nth-child(even) {
+        background: #EBEBEB;
+    }
+    td {
+        padding: 2px;
+    }
+    table {
+        border: 1px solid #333;
+        padding: 0px;
+        margin: 5px;
+        min-width: 600px;
+    }
 ]]
