@@ -170,6 +170,7 @@ function handle(r)
                 reading = threadActions[3] or 0,
                 graceful = threadActions[9] or 0
             },
+            mpm = mpm,
             uptime = uptime,
             connections = cons,
             bytes = bytes,
@@ -213,7 +214,7 @@ function handle(r)
     <b>Server Built:</b> %s<br/>
     <b>Server (re)started:</b> %s<br/>
     <b>Uptime: </b> <span id='uptime'></span><br/>
-    <b>Server MPM:</b> %s<br/>
+    <b>Server MPM:</b> %s <span id='mpminfo'></span><br/>
     <b>Generation:</b> %u<br/>
     <b>Current work-force:</b> <span id="current_threads">%u (%u processes x %u threads)</span><br/>
     <b>Maximum work-force:</b> <span id="max_threads">%u (%u processes x %u threads)</span><br/>
@@ -365,10 +366,19 @@ function refreshCharts(json, state) {
         var arr = [];
         for (var i in actionCache) {
             var el = actionCache[i];
-            arr.push([el.timestamp, el.keepalive, el.closing, el.idle, el.writing, el.reading, el.graceful]);
+            if (json.mpm == 'event') {
+            arr.push([el.timestamp, el.closing, el.idle, el.writing, el.reading, el.graceful]);
+            } else {
+                arr.push([el.timestamp, el.keepalive, el.closing, el.idle, el.writing, el.reading, el.graceful]);
+            }
+        }
+        var states = ['Keepalive', 'Closing', 'Idle', 'Writing', 'Reading', 'Graceful']
+        if (json.mpm == 'event') {
+            states.shift();
+            document.getElementById('mpminfo').innerHTML = "(" + fn(parseInt(json.states.keepalive)) + " connections in idle keepalive)";
         }
         // Draw action chart
-        quokkaLines("actions_div", ['Keepalive', 'Closing', 'Idle', 'Writing', 'Reading', 'Graceful'], arr, { lastsum: true, hires: true, nosum: true, stack: true, curve: true, title: "Connection states" } );
+        quokkaLines("actions_div", states, arr, { lastsum: true, hires: true, nosum: true, stack: true, curve: true, title: "Thread states" } );
         
         
         // Get traffic, figure out how much it was this time (0 if just started!)
@@ -828,7 +838,7 @@ function quokkaLines(id, titles, values, options, sums) {
     ctx.lineWidth = 0.25;
     ctx.strokeStyle = "#000000";
     
-    var lwidth = 250;
+    var lwidth = 300;
     var lheight = 75;
     wspace = (options && options.hires) ? 100 : 50;
     var rectwidth = canvas.width - lwidth - wspace;
