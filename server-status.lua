@@ -768,7 +768,10 @@ for (var x=0;x<numColorRows;x++) {
         // Darker variant for gradients:
         var dhex = quokka_internal_rgb2hex(color.r*131, color.g*131, color.b*131);
         
-        colors.push([hex, dhex, color]);
+        // Medium variant for legends:
+        var mhex = quokka_internal_rgb2hex(color.r*200, color.g*200, color.b*200);
+        
+        colors.push([hex, dhex, color, mhex]);
     }
 }
 
@@ -946,7 +949,7 @@ function quokkaLines(id, titles, values, options, sums) {
         if (options && options.lastsum) {
             title = titles[k] + " (" + values[values.length-1][x].toFixed(0) + ")";
         }
-        ctx.fillStyle = colors[k % colors.length][0];
+        ctx.fillStyle = colors[k % colors.length][3];
         ctx.fillRect(wspace + rectwidth + 75 , posY-((options && options.hires) ? 15:9), (options && options.hires) ? 20:10, (options && options.hires) ?20:10);
         
         // Add legend text
