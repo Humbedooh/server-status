@@ -20,6 +20,13 @@ under the License.
 --[[ mod_lua implementation of the server-status page ]]
 
 local redact_ips = true -- whether to replace the last two bits of every IP with 'x.x'
+local warning_banner = [[
+    <div style="margin-bottom: 8px; text-align: center; width: 900px; font-size: 0.7rem; border: 1px dashed #666; background: #FEC;">
+        <h3 style="margin: 4px; font-size: 1rem; color: #B40;">Don't be alarmed - this page is here for a reason!</h3>
+        <p>This is an example server status page for the Apache HTTP Server. Nothing on this server is secret, no URL tokens, no sensitive passwords. Everything served from here is static data.</p>
+    </div>
+]]
+local show_warning = false -- whether to display the above warning/notice on the page
 
 -- pre-declare some variables defined at the bottom of this script:
 local status_js, status_css, quokka_js
@@ -212,6 +219,7 @@ function handle(r)
 
   <body onload="refreshCharts(false);">
     <h2>Status for %s on %s</h2>
+    %s
     <div style="width: 90%%; float: left; clear: both; margin-bottom: 25px;">
     <b>Server version:</b> %s<br/>
     <b>Server Built:</b> %s<br/>
@@ -247,7 +255,7 @@ function handle(r)
                         threadActions[9] or 0 , maxCPU - utime - stime, stime, utime, cons, uptime, bytes
                     ),
     
-    r.server_name, r.banner, r.server_name, r.banner, r.server_built, os.date("%c",r.started), mpm, r.mpm_query(15),
+    r.server_name, r.banner, r.server_name, show_warning and warning_banner or "", r.banner, r.server_built, os.date("%c",r.started), mpm, r.mpm_query(15),
     curServers*maxThreads,curServers,maxThreads,maxServers*maxThreads, maxServers,maxThreads,cons,
     cons/uptime, bytes/1024/1024, bytes/uptime/1024, bytes/cons/1024
     ) );
