@@ -19,6 +19,8 @@ under the License.
 
 --[[ mod_lua implementation of the server-status page ]]
 
+local redact_ips = true -- whether to replace the last two bits of every IP with 'x.x'
+
 -- pre-declare some variables defined at the bottom of this script:
 local status_js, status_css, quokka_js
 
@@ -279,7 +281,7 @@ function handle(r)
                         if k == "tid" then v = string.format("0x%x", v) end
                         if k == "status" then v = ({'D','.','R','W','K','L','D','C','G','I'})[tonumber(v)] or "??" end
                         if v == "" then v = "N/A" end
-                        if k == "client" then v = v:gsub("[a-f0-9]+[.:]+[a-f0-9]+$", "x.x") end
+                        if k == "client" and redact_ips then v = v:gsub("[a-f0-9]+[.:]+[a-f0-9]+$", "x.x") end
                         if k ~= "pid" and k ~= "start_time" and k ~= "stop_time" then r:puts("<td>",v,"</td>"); end
                     end
                     r:puts("</tr>");
