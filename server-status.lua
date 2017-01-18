@@ -28,6 +28,7 @@ local warning_banner = [[
 ]]
 local show_warning = false -- whether to display the above warning/notice on the page
 local show_modules = false -- Whether to list loaded modules or not
+local show_threads = true -- whether to list thread information or not
 
 -- pre-declare some variables defined at the bottom of this script:
 local status_js, status_css, quokka_js
@@ -250,7 +251,7 @@ function handle(r)
     <div id="costs_div" style="float: left; width:800px;"></div>
 
     <div style="clear: both;">
-        <a id="show_link" href="javascript:void(0);" onclick="javascript:showDetails();">Show thread information</a><br>
+        %s
         %s
     </div>
 
@@ -266,46 +267,49 @@ function handle(r)
     r.server_name, r.banner, r.server_name, show_warning and warning_banner or "", r.banner, r.server_built, os.date("%c",r.started), mpm, r.mpm_query(15),
     curServers*maxThreads,curServers,maxThreads,maxServers*maxThreads, maxServers,maxThreads,cons,
     cons/uptime, bytes/1024/1024, bytes/uptime/1024, bytes/cons/1024,
+    show_threads and '<a id="show_link" href="javascript:void(0);" onclick="javascript:showDetails();">Show thread information</a><br>' or "",
     show_modules and '<a id="show_modules_link" href="javascript:void(0);" onclick="javascript:show_modules();">Show loaded modules</a>' or ""
     ) );
 
     r:flush()
 
     -- Print out details about each process/thread
-    for i=0,curServers-1,1 do
-        local info = r.scoreboard_process(r, i);
-        if info.pid ~= 0 then
-            r:puts("<div id='srv_",i+1,"' style='display: none; clear: both;' class='servers'><b>Server #", i+1, ":</b><br/>\n");
-            for k, v in pairs(info) do
-                r:puts(k, " = ", v, "<br/>\n");
-            end
-            r:puts([[<table id="server_]]..i..[[" name="server_]]..i..[[" border='1' style='font-family: arial, helvetica, sans-serif; font-size: 12px; border: 1px solid #666;'><tr>]])
-            local worker = r.scoreboard_worker(r, i, 0);
-            local p = 0;
-            for k, v in pairs(worker) do
-                if k ~= "pid" and k ~= "start_time" and k ~= "stop_time" then
-                    r:puts("<th style='cursor:pointer;' onclick=\"sort(document.getElementById('server_",i,"'), ", p, ");\">",k,"</th>");
+    if show_threads then
+        for i=0,curServers-1,1 do
+            local info = r.scoreboard_process(r, i);
+            if info.pid ~= 0 then
+                r:puts("<div id='srv_",i+1,"' style='display: none; clear: both;' class='servers'><b>Server #", i+1, ":</b><br/>\n");
+                for k, v in pairs(info) do
+                    r:puts(k, " = ", v, "<br/>\n");
                 end
-                p = p + 1;
-            end
-            r:puts[[</tr>]]
-            for j = 0, maxThreads-1 do
-                worker = r.scoreboard_worker(r,i, j)
-                if worker then
-
-                    r:puts("<tr>");
-                    for k, v in pairs(worker) do
-                        if ( k == "last_used" and v > 3600) then v = os.date("%c", v/1000000) end
-                        if k == "tid" then v = string.format("0x%x", v) end
-                        if k == "status" then v = ({'D','.','R','W','K','L','D','C','G','I'})[tonumber(v)] or "??" end
-                        if v == "" then v = "N/A" end
-                        if k == "client" and redact_ips then v = v:gsub("[a-f0-9]+[.:]+[a-f0-9]+$", "x.x") end
-                        if k ~= "pid" and k ~= "start_time" and k ~= "stop_time" then r:puts("<td>",v,"</td>"); end
+                r:puts([[<table id="server_]]..i..[[" name="server_]]..i..[[" border='1' style='font-family: arial, helvetica, sans-serif; font-size: 12px; border: 1px solid #666;'><tr>]])
+                local worker = r.scoreboard_worker(r, i, 0);
+                local p = 0;
+                for k, v in pairs(worker) do
+                    if k ~= "pid" and k ~= "start_time" and k ~= "stop_time" then
+                        r:puts("<th style='cursor:pointer;' onclick=\"sort(document.getElementById('server_",i,"'), ", p, ");\">",k,"</th>");
                     end
-                    r:puts("</tr>");
+                    p = p + 1;
                 end
+                r:puts[[</tr>]]
+                for j = 0, maxThreads-1 do
+                    worker = r.scoreboard_worker(r,i, j)
+                    if worker then
+    
+                        r:puts("<tr>");
+                        for k, v in pairs(worker) do
+                            if ( k == "last_used" and v > 3600) then v = os.date("%c", v/1000000) end
+                            if k == "tid" then v = string.format("0x%x", v) end
+                            if k == "status" then v = ({'D','.','R','W','K','L','D','C','G','I'})[tonumber(v)] or "??" end
+                            if v == "" then v = "N/A" end
+                            if k == "client" and redact_ips then v = v:gsub("[a-f0-9]+[.:]+[a-f0-9]+$", "x.x") end
+                            if k ~= "pid" and k ~= "start_time" and k ~= "stop_time" then r:puts("<td>",v,"</td>"); end
+                        end
+                        r:puts("</tr>");
+                    end
+                end
+                r:puts[[</table><hr/></div>]]
             end
-            r:puts[[</table><hr/></div>]]
         end
     end
 
