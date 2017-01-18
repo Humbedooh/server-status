@@ -238,6 +238,7 @@ function handle(r)
     <canvas id="traffic_div" width="1200" height="500" style="width: 600px; height: 250px; float: left;"></canvas>
     <div style="clear: both"></div>
     <canvas id="status_div" width="800" height="500" style="width: 400px; height: 250px; float: left;"></canvas>
+    <canvas id="idle_div" width="800" height="500" style="width: 400px; height: 250px; float: left;"></canvas>
     <canvas id="cpu_div" width="800" height="500" style="width: 400px; height: 250px; float: left;"></canvas>
     <div id="costs_div" style="float: left; width:800px;"></div>
 
@@ -427,6 +428,16 @@ function refreshCharts(json, state) {
         
         // Thread info
         quokkaCircle("status_div", [ { title: 'Active', value: (json.threads*json.servers)}, { title: 'Reserve', value: (json.threads*(json.maxServers-json.servers))} ], { title: "Worker pool", hires: true});
+        
+        // Idle vs active connections
+        var idlecons = json.states.keepalive;
+        var activecons = json.states.closing + json.states.writing + json.states.reading;
+        quokkaCircle("idle_div", [
+            { title: 'Idle', value: idlecons},
+            { title: 'Active', value: activecons},
+            ],
+            { hires: true, title: "Idle vs active connections"});
+        
         
         // CPU info
         while ( (json.systime+json.utime) > cpumax ) {
@@ -801,7 +812,7 @@ function quokkaCircle(id, tags, opts) {
     
     ctx.beginPath();
     var posY = 20;
-    var left = 140 + ((canvas.width-140)/2) + 20
+    var left = 140 + ((canvas.width-140)/2) + ((opts && opts.hires) ? 60 : 30)
     for (k in tags) {
         var val = tags[k].value;
         stop = stop + (2 * Math.PI * (val / total));
