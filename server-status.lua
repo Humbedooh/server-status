@@ -146,8 +146,8 @@ function handle(r)
         if server then
             if server.pid then
                 keepalives = keepalives + (server.keepalive or 0)
-                curServers = curServers + 1
                 if server.pid > 0 then
+                    curServers = curServers + 1
                     procs[tostring(server.pid)] = {
                         bytes = 0
                     }
