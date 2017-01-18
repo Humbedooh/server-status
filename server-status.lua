@@ -251,7 +251,7 @@ function handle(r)
 
     <div style="clear: both;">
         <a id="show_link" href="javascript:void(0);" onclick="javascript:showDetails();">Show thread information</a><br>
-        <a id="show_modules_link" href="javascript:void(0);" onclick="javascript:show_modules();">Show loaded modules</a>
+        %s
     </div>
 
 
@@ -265,7 +265,8 @@ function handle(r)
     
     r.server_name, r.banner, r.server_name, show_warning and warning_banner or "", r.banner, r.server_built, os.date("%c",r.started), mpm, r.mpm_query(15),
     curServers*maxThreads,curServers,maxThreads,maxServers*maxThreads, maxServers,maxThreads,cons,
-    cons/uptime, bytes/1024/1024, bytes/uptime/1024, bytes/cons/1024
+    cons/uptime, bytes/1024/1024, bytes/uptime/1024, bytes/cons/1024,
+    show_modules and '<a id="show_modules_link" href="javascript:void(0);" onclick="javascript:show_modules();">Show loaded modules</a>' or ""
     ) );
 
     r:flush()
