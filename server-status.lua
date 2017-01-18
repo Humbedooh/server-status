@@ -121,12 +121,14 @@ function handle(r)
     local cons = 0;
     local bytes = 0;
     local threadActions = {}
+    local keepalives = 0
 
     -- Fetch process/thread data
     for i=0,maxServers,1 do
         local server = r.scoreboard_process(r, i);
         if server then
             if server.pid > 0 then
+                keepalives = keepalives + (server.keepalive or 0)
                 curServers = curServers + 1
                 for j = 0, maxThreads-1, 1 do
                     local worker = r.scoreboard_worker(r, i, j)
@@ -161,7 +163,7 @@ function handle(r)
         --threadsKeepalive,threadsClosing,threadsIdle,threadsWriting,threadsReading,threadsGraceful
         local tbl ={
             states = {
-                keepalive = threadActions[5] or 0,
+                keepalive = (keepalives > 0) and keepalives or threadActions[5] or 0,
                 closing = threadActions[8] or 0,
                 idle = threadActions[2] or 0,
                 writing = threadActions[4] or 0,
@@ -366,7 +368,7 @@ function refreshCharts(json, state) {
             arr.push([el.timestamp, el.keepalive, el.closing, el.idle, el.writing, el.reading, el.graceful]);
         }
         // Draw action chart
-        quokkaLines("actions_div", ['Keepalive', 'Closing', 'Idle', 'Writing', 'Reading', 'Graceful'], arr, { lastsum: true, hires: true, nosum: true, stack: true, curve: true, title: "Thread states" } );
+        quokkaLines("actions_div", ['Keepalive', 'Closing', 'Idle', 'Writing', 'Reading', 'Graceful'], arr, { lastsum: true, hires: true, nosum: true, stack: true, curve: true, title: "Connection states" } );
         
         
         // Get traffic, figure out how much it was this time (0 if just started!)
