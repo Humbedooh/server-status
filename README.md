@@ -31,3 +31,11 @@ to your appropriate VirtualHost configuration:
     AddHandler lua-script .lua
 
 Then just put the `.lua` script somewhere in your document root and visit the page.
+
+## Configuring
+There are a few options inside the Lua script that can be set to `true` or `false`:
+
+- `show_warning`: Whether or not to show a notice that this page is there on purpose.
+- `redact_ips`: Whether or not to replace the last few bits of every IP with 'x.x'
+- `show_modules`: Whether to show the list of loaded modules or not
+- `show_threads`: Whether to show thread details or not.
