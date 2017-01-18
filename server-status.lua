@@ -31,6 +31,7 @@ local function quickJSON(input)
         for k, v in pairs(input) do
             if type(k) ~= "number" then
                 t = 'hash'
+                break
             end
         end
         
