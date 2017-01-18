@@ -366,7 +366,7 @@ function refreshCharts(json, state) {
             arr.push([el.timestamp, el.keepalive, el.closing, el.idle, el.writing, el.reading, el.graceful]);
         }
         // Draw action chart
-        quokkaLines("actions_div", ['Keepalive', 'Closing', 'Idle', 'Writing', 'Reading', 'Graceful'], arr, { lastsum: true, hires: true, nosum: true, stack: true, curve: false, title: "Thread states" } );
+        quokkaLines("actions_div", ['Keepalive', 'Closing', 'Idle', 'Writing', 'Reading', 'Graceful'], arr, { lastsum: true, hires: true, nosum: true, stack: true, curve: true, title: "Thread states" } );
         
         
         // Get traffic, figure out how much it was this time (0 if just started!)
@@ -399,7 +399,7 @@ function refreshCharts(json, state) {
             arr.push([el.timestamp, el.bytes]);
         }
         // Draw action chart
-        quokkaLines("traffic_div", ['Traffic'], arr, { traffic: true, hires: true, nosum: true, stack: true, curve: false, title: "Traffic per second" } );
+        quokkaLines("traffic_div", ['Traffic'], arr, { traffic: true, hires: true, nosum: true, stack: true, curve: true, title: "Traffic per second" } );
         
         
         // Thread info
