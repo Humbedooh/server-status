@@ -172,6 +172,7 @@ function getServerState(r, verbose)
                             table.insert(s.threads, {
                                 bytes = worker.bytes_served,
                                 thread = worker.tid,
+                                client = redact_ips and (worker.client or "???"):gsub("[a-f0-9]+[.:]+[a-f0-9]+$", "x.x") or worker.client or "???",
                                 cost = ((worker.utimes or 0) + (worker.stimes or 0)),
                                 count = worker.access_count,
                                 vhost = worker.vhost:gsub(":%d+", ""),
