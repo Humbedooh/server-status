@@ -105,11 +105,11 @@ local function modInfo(r, modname)
     end
 end
 
-
+-- Function for generating server stats
 function getServerState(r, verbose)
     local state = {}
     
-    state.mpm {
+    state.mpm = {
         type = "prefork", -- default to prefork until told otherwise
         threadsPerChild = 1,
         threaded = false,
@@ -150,7 +150,9 @@ function getServerState(r, verbose)
             local s = {
                 active = false,
                 pid = nil,
-                bytes = 0
+                bytes = 0,
+                stime = 0,
+                utime = 0,
             }
             local tstates = {}
             if server.pid then
@@ -160,20 +162,22 @@ function getServerState(r, verbose)
                     s.active = true
                     s.pid = server.pid
                 end
-                for j = 0, maxThreads-1, 1 do
+                for j = 0, state.mpm.threadsPerChild, 1 do
                     local worker = r.scoreboard_worker(r, i, j)
                     if worker then
-                        stime = stime + (worker.stimes or 0);
-                        utime = utime + (worker.utimes or 0);
-                        if verbose then
-                            table.insert(costs, {
-                                process = i,
+                        s.stime = s.stime + (worker.stimes or 0);
+                        s.utime = s.utime + (worker.utimes or 0);
+                        if verbose and show_threads then
+                            s.threads = s.threads or {}
+                            table.insert(s.threads, {
+                                bytes = worker.bytes_served,
                                 thread = worker.tid,
                                 cost = ((worker.utimes or 0) + (worker.stimes or 0)),
                                 count = worker.access_count,
                                 vhost = worker.vhost:gsub(":%d+", ""),
                                 request = worker.request
                             })
+                        end
                         state.server.connections = state.server.connections + worker.access_count
                         s.bytes = s.bytes + worker.bytes_served
                         if server.pid > 0 then
@@ -191,6 +195,8 @@ function getServerState(r, verbose)
                 graceful = tstates[9] or 0
             }
             table.insert(state.processes, s)
+            state.server.bytes = state.server.bytes + s.bytes
+            state.connections.active = state.connections.active + (tstates[8] or 0) + (tstates[4] or 0) + (tstates[3] or 0)
         end
     end
     return state
@@ -209,13 +215,14 @@ function handle(r)
 
 
     -- If we only need the stats feed, compact it and hand it over
-    if GET['view'] and GET['view'] == "json_status" then
-        local state = getServerState(r, false)
+    if GET['view'] and GET['view'] == "json" then
+        local state = getServerState(r, GET['extended'] == 'true')
         r.content_type = "application/json"
         r:puts(quickJSON(state))
         return apache2.OK
     end
 
+    local state = getServerState(r, show_threads)
     
     -- Print out the HTML for the front page
     r.content_type = "text/html"
@@ -273,31 +280,43 @@ function handle(r)
 ]=]):format(
     status_css,
     quokka_js,
-    status_js:format(   curServers, maxServers, maxThreads, threadActions[2] or 0, threadActions[4] or 0,
-                        threadActions[3] or 0 , threadActions[5] or 0 ,threadActions[8] or 0 ,
-                        threadActions[9] or 0 , maxCPU - utime - stime, stime, utime, cons, uptime, bytes
-                    ),
-    
-    r.server_name, r.banner, r.server_name, show_warning and warning_banner or "", r.banner, r.server_built, os.date("%c",r.started), mpm, r.mpm_query(15),
-    curServers*maxThreads,curServers,maxThreads,maxServers*maxThreads, maxServers,maxThreads,cons,
-    cons/uptime, bytes/1024/1024, bytes/uptime/1024, bytes/cons/1024,
+    status_js,
+    r.server_name,
+    r.banner,
+    r.server_name,
+    show_warning and warning_banner or "",
+    r.banner,
+    r.server_built,
+    os.date("%c",r.started),
+    state.mpm.type,
+    r.mpm_query(15),
+    state.mpm.activeServers*state.mpm.threadsPerChild,
+    state.mpm.activeServers,
+    state.mpm.threadsPerChild,
+    state.mpm.maxServers*state.mpm.threadsPerChild,
+    state.mpm.maxServers,
+    state.mpm.threadsPerChild,
+    state.server.connections,
+    state.server.connections/state.server.uptime,
+    state.server.bytes/1024/1024,
+    state.server.bytes/state.server.uptime/1024,
+    state.server.bytes/state.server.connections/1024,
     show_threads and '<a id="show_link" href="javascript:void(0);" onclick="javascript:showDetails();">Show thread information</a><br>' or "",
     show_modules and '<a id="show_modules_link" href="javascript:void(0);" onclick="javascript:show_modules();">Show loaded modules</a>' or ""
     ) );
 
-    r:flush()
-
     -- Print out details about each process/thread
     if show_threads then
-        for i=0,curServers-1,1 do
-            local info = r.scoreboard_process(r, i);
-            if info.pid ~= 0 then
-                r:puts("<div id='srv_",i+1,"' style='display: none; clear: both;' class='servers'><b>Server #", i+1, ":</b><br/>\n");
+        for i, info in pairs(state.processes) do
+            if info.active then
+                r:puts("<div id='srv_",i,"' style='display: none; clear: both;' class='servers'><b>Server #", i, ":</b><br/>\n");
                 for k, v in pairs(info) do
-                    r:puts(k, " = ", v, "<br/>\n");
+                    if type(v) == "string" or type(v) == "number" then
+                        r:puts(k, " = ", type(v) == "string" and v or ("%d"):format(v), "<br/>\n");
+                    end
                 end
                 r:puts([[<table id="server_]]..i..[[" name="server_]]..i..[[" border='1' style='font-family: arial, helvetica, sans-serif; font-size: 12px; border: 1px solid #666;'><tr>]])
-                local worker = r.scoreboard_worker(r, i, 0);
+                local worker = info.threads[1]
                 local p = 0;
                 for k, v in pairs(worker) do
                     if k ~= "pid" and k ~= "start_time" and k ~= "stop_time" then
@@ -306,14 +325,12 @@ function handle(r)
                     p = p + 1;
                 end
                 r:puts[[</tr>]]
-                for j = 0, maxThreads-1 do
-                    worker = r.scoreboard_worker(r,i, j)
-                    if worker then
-    
+                for j, worker in pairs(info.threads) do
+                    if worker then   
                         r:puts("<tr>");
                         for k, v in pairs(worker) do
                             if ( k == "last_used" and v > 3600) then v = os.date("%c", v/1000000) end
-                            if k == "tid" then v = string.format("0x%x", v) end
+                            if k == "thread" then v = string.format("0x%x", v) end
                             if k == "status" then v = ({'D','.','R','W','K','L','D','C','G','I'})[tonumber(v)] or "??" end
                             if v == "" then v = "N/A" end
                             if k == "client" and redact_ips then v = v:gsub("[a-f0-9]+[.:]+[a-f0-9]+$", "x.x") end
@@ -385,19 +402,45 @@ var lastBytes = 0;
 var negativeBytes = 0; // cache for proc reloads, which skews traffic
 var updateSpeed = 5; // How fast do charts update?
 var maxRecords = 15; // How many records to show per chart
-var cpumax = 250000; // random cpu max(?)
+var cpumax = 1000000; // random cpu max(?)
 
 function refreshCharts(json, state) {
-    if (json && json.states) {
+    if (json && json.processes) {
         
         // Get a timestamp
         var now = new Date();
         var ts = now.getHours().pad(2) + ":" + now.getMinutes().pad(2) + ":" + now.getSeconds().pad(2);
         
+        var utime = 0;
+        var stime = 0;
+        
+        // Construct state based on proc details
+        var state = {
+            timestamp: ts,
+            closing: 0,
+            idle: 0,
+            writing: 0,
+            reading: 0,
+            keepalive: 0,
+            graceful: 0
+        }
+        for (var i in json.processes) {
+            var proc = json.processes[i];
+            if (proc.pid) {
+                state.closing += proc.workerStates.closing||0;
+                state.idle += proc.workerStates.idle||0;
+                state.writing += proc.workerStates.writing||0;
+                state.reading += proc.workerStates.reading||0;
+                state.keepalive += proc.workerStates.keepalive||0;
+                state.graceful += proc.workerStates.graceful||0;
+                utime += proc.utime;
+                stime += proc.stime;
+            }
+        }
+        
         // Push action state entry into action cache with timestamp
         // Shift if more than 10 entries in cache
-        json.states['timestamp'] = ts;
-        actionCache.push(json.states);
+        actionCache.push(state);
         if (actionCache.length > maxRecords) {
             actionCache.shift();
         }
@@ -406,16 +449,16 @@ function refreshCharts(json, state) {
         var arr = [];
         for (var i in actionCache) {
             var el = actionCache[i];
-            if (json.mpm == 'event') {
+            if (json.mpm.type == 'event') {
             arr.push([el.timestamp, el.closing, el.idle, el.writing, el.reading, el.graceful]);
             } else {
                 arr.push([el.timestamp, el.keepalive, el.closing, el.idle, el.writing, el.reading, el.graceful]);
             }
         }
         var states = ['Keepalive', 'Closing', 'Idle', 'Writing', 'Reading', 'Graceful']
-        if (json.mpm == 'event') {
+        if (json.mpm.type == 'event') {
             states.shift();
-            document.getElementById('mpminfo').innerHTML = "(" + fn(parseInt(json.states.keepalive)) + " connections in idle keepalive)";
+            document.getElementById('mpminfo').innerHTML = "(" + fn(parseInt(json.connections.idle)) + " connections in idle keepalive)";
         }
         // Draw action chart
         quokkaLines("actions_div", states, arr, { lastsum: true, hires: true, nosum: true, stack: true, curve: true, title: "Thread states" } );
@@ -423,8 +466,9 @@ function refreshCharts(json, state) {
         
         // Get traffic, figure out how much it was this time (0 if just started!)
         var bytesThisTurn = 0;
-        for (var pid in json.processes) {
-            var proc = json.processes[pid];
+        for (var i in json.processes) {
+            var proc = json.processes[i];
+            var pid = proc.pid
             // if we haven't seen this proc before, ignore its bytes first time
             if (!processes[pid]) {
                 processes[pid] = {
@@ -462,11 +506,15 @@ function refreshCharts(json, state) {
         
         
         // Thread info
-        quokkaCircle("status_div", [ { title: 'Active', value: (json.threads*json.servers)}, { title: 'Reserve', value: (json.threads*(json.maxServers-json.servers))} ], { title: "Worker pool", hires: true});
+        quokkaCircle("status_div", [
+        { title: 'Active', value: (json.mpm.threadsPerChild*json.mpm.activeServers)},
+        { title: 'Reserve', value: (json.mpm.threadsPerChild*(json.mpm.activeServers-json.mpm.maxServers))}
+        ],
+            { title: "Worker pool", hires: true});
         
         // Idle vs active connections
-        var idlecons = json.states.keepalive;
-        var activecons = json.states.closing + json.states.writing + json.states.reading;
+        var idlecons = json.connections.idle;
+        var activecons = json.connections.active;
         quokkaCircle("idle_div", [
             { title: 'Idle', value: idlecons},
             { title: 'Active', value: activecons},
@@ -475,43 +523,43 @@ function refreshCharts(json, state) {
         
         
         // CPU info
-        while ( (json.systime+json.utime) > cpumax ) {
+        while ( (stime+utime) > cpumax ) {
             cpumax = cpumax * 2;
         }
 
         quokkaCircle("cpu_div", [
-            { title: 'Idle', value: (cpumax - json.systime - json.utime) / (cpumax/100)},
-            { title: 'System', value: json.systime/(cpumax/100)},
-            { title: 'User', value: json.utime/(cpumax/100)}
+            { title: 'Idle', value: (cpumax - stime - utime) / (cpumax/100)},
+            { title: 'System', value: stime/(cpumax/100)},
+            { title: 'User', value: utime/(cpumax/100)}
             ],
             { hires: true, title: "CPU usage", pct: true});
         
         
         // Change connection/transfer info
         var obj = document.getElementById("connections");
-        obj.innerHTML = fn(json.connections) + " (" + Math.floor(json.connections/json.uptime*1000)/1000 + "/sec)";
-        var MB = fnmb(json.bytes);
-        var KB = (bytesTransfered > 0) ? fnmb(json.bytes/json.connections) : 0;
-        var KBs = fnmb(json.bytes/json.uptime);
+        obj.innerHTML = fn(json.server.connections) + " (" + Math.floor(json.server.connections/json.server.uptime*1000)/1000 + "/sec)";
+        var MB = fnmb(json.server.bytes);
+        var KB = (json.server.bytes > 0) ? fnmb(json.server.bytes/json.server.connections) : 0;
+        var KBs = fnmb(json.server.bytes/json.server.uptime);
         obj = document.getElementById("transfer");
         obj.innerHTML = MB + " (" + KB + "/req, " + KBs + "/sec)";
 
         
         // Active vs reserved threads
-        var activeThreads = json.servers * json.threads;
-        var maxThreads = json.maxServers * json.threads;
-        var reservedThreads = (json.maxServers-json.servers) * json.threads;
+        var activeThreads = json.mpm.activeServers * json.mpm.threadsPerChild;
+        var maxThreads = json.mpm.maxServers * json.mpm.threadsPerChild;
+        var reservedThreads = (json.mpm.maxServers-json.mpm.activeServers) * json.mpm.threadsPerChild;
         obj = document.getElementById("current_threads");
-        obj.innerHTML = activeThreads + " (" + json.servers + " processes x " + json.threads + " threads)";
+        obj.innerHTML = activeThreads + " (" + json.mpm.activeServers + " processes x " + json.mpm.threadsPerChild + " threads)";
         obj = document.getElementById("max_threads");
-        obj.innerHTML = maxThreads + " (" + json.maxServers + " processes x " + json.threads + " threads)";
+        obj.innerHTML = maxThreads + " (" + json.mpm.maxServers + " processes x " + json.mpm.threadsPerChild + " threads)";
 
         // Uptime calculation
         var uptime_div = document.getElementById('uptime');
-        var u_d = Math.floor(json.uptime/86400);
-        var u_h = Math.floor((json.uptime%%86400)/3600);
-        var u_m = Math.floor((json.uptime%%3600)/60);
-        var u_s = Math.floor(json.uptime %%60);
+        var u_d = Math.floor(json.server.uptime/86400);
+        var u_h = Math.floor((json.server.uptime%86400)/3600);
+        var u_m = Math.floor((json.server.uptime%3600)/60);
+        var u_s = Math.floor(json.server.uptime %60);
         var str =  u_d + " day" + (u_d != 1 ? "s, " : ", ") + u_h + " hour" + (u_h != 1 ? "s, " : ", ") + u_m + " minute" + (u_m != 1 ? "s, " : ", ") + u_s + " second" + (u_s != 1 ? "s" : "");
         uptime_div.innerHTML = str;
         window.setTimeout(waitTwo, updateSpeed*1000);
@@ -521,7 +569,7 @@ function refreshCharts(json, state) {
 }
 
 function waitTwo() {
-    getAsync(location.href + "?view=json_status&rnd=" + Math.random(), null, refreshCharts)
+    getAsync(location.href + "?view=json&rnd=" + Math.random(), null, refreshCharts)
 }
 
     
@@ -631,50 +679,8 @@ function waitTwo() {
     }
 
     
-    var currentServers =    %u;
-    var maxServers =        %u;
-    var threadsPerProcess = %u;
-
-
-    var threadsIdle =       %u;
-    var threadsWriting =    %u;
-    var threadsReading =    %u;
-    var threadsKeepalive =  %u;
-    var threadsClosing =    %u;
-    var threadsGraceful =   %u;
-
-    var cpuIdle =           %u;
-    var cpuSystem =         0;
-    var cpuUser =           0;
-    var cpuSystemTotal =    %u;
-    var cpuUserTotal =      %u;
-    var CPUmax =            100000;
-
-    var connections =       %u;
-    var uptime =            %u;
-    var bytesTransfered =   %u;
-    var bytesDifferenceIn = 0;
-    var bytesDifferenceOut = 0;
-
-    var pool_data;
-    var pool_chart;
-    var pool_options;
-
-    var status_data;
-    var status_chart;
-    var status_options;
-
-    var cpu_data;
-    var cpu_chart;
-    var cpu_options;
-
-    var traffic_chart;
-    var traffic_data;
-    var traffic_options;
-
-    var costs = [];
-    var arr;
-
+    var CPUmax =            1000000;
+    
     
     var showing = false;
     function showDetails() {
