@@ -315,7 +315,7 @@ function handle(r)
                         r:puts(k, " = ", type(v) == "string" and v or ("%d"):format(v), "<br/>\n");
                     end
                 end
-                r:puts([[<table id="server_]]..i..[[" name="server_]]..i..[[" border='1' style='font-family: arial, helvetica, sans-serif; font-size: 12px; border: 1px solid #666;'><tr>]])
+                r:puts([[<table id="server_]]..i..[[" name="server_]]..i..[[" border='0' style='font-family: arial, helvetica, sans-serif; font-size: 12px; border: 1px solid #666;'><tr>]])
                 local worker = info.threads[1]
                 local p = 0;
                 for k, v in pairs(worker) do
@@ -1551,13 +1551,6 @@ status_css = [[
         width:400px;
     }
 
-    #modules div:nth-of-type(even), .servers table tr:nth-of-type(even){
-        background-color:#fff;
-    }
-
-    #modules div:nth-of-type(odd), .servers table tr:nth-of-type(odd){
-        background-color:#cecece;
-    }
     tr:nth-child(odd) {
         background: #F6F6F6;
     }
@@ -1572,5 +1565,6 @@ status_css = [[
         padding: 0px;
         margin: 5px;
         min-width: 600px;
+        background: #999;
     }
 ]]
