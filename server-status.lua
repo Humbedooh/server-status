@@ -106,6 +106,95 @@ local function modInfo(r, modname)
 end
 
 
+function getServerState(r, verbose)
+    local state = {}
+    
+    state.mpm {
+        type = "prefork", -- default to prefork until told otherwise
+        threadsPerChild = 1,
+        threaded = false,
+        maxServers = r.mpm_query(12),
+        activeServers = 0
+    }
+    if r.mpm_query(14) == 1 then
+        state.mpm.type = "event" -- this is event mpm
+    elseif r.mpm_query(3) >= 1 then
+        state.mpm.type = "worker" -- it's not event, but it's threaded, we'll assume worker mpm (could be motorz??)
+    elseif r.mpm_query(2) == 1 then
+        state.mpm.type = "winnt" -- it's threaded, but not worker nor event, so it's probably winnt
+    end
+    if state.mpm.type ~= "prefork" then
+        state.mpm.threaded = true -- it's threaded
+        state.mpm.threadsPerChild = r.mpm_query(6) -- get threads per child proc
+    end
+    
+    state.processes = {} -- list of child procs
+    state.connections = { -- overall connection info
+        idle = 0,
+        active = 0
+    }
+    -- overall server stats
+    state.server = {
+        connections = 0,
+        bytes = 0,
+        built = r.server_built,
+        uptime = os.time() - r.started,
+        version = r.banner,
+        host = r.server_name,
+    }
+    
+    -- Fetch process/thread data
+    for i=0,state.mpm.maxServers,1 do
+        local server = r.scoreboard_process(r, i);
+        if server then
+            local s = {
+                active = false,
+                pid = nil,
+                bytes = 0
+            }
+            local tstates = {}
+            if server.pid then
+                state.connections.idle = state.connections.idle + (server.keepalive or 0)
+                if server.pid > 0 then
+                    state.mpm.activeServers = state.mpm.activeServers + 1
+                    s.active = true
+                    s.pid = server.pid
+                end
+                for j = 0, maxThreads-1, 1 do
+                    local worker = r.scoreboard_worker(r, i, j)
+                    if worker then
+                        stime = stime + (worker.stimes or 0);
+                        utime = utime + (worker.utimes or 0);
+                        if verbose then
+                            table.insert(costs, {
+                                process = i,
+                                thread = worker.tid,
+                                cost = ((worker.utimes or 0) + (worker.stimes or 0)),
+                                count = worker.access_count,
+                                vhost = worker.vhost:gsub(":%d+", ""),
+                                request = worker.request
+                            })
+                        state.server.connections = state.server.connections + worker.access_count
+                        s.bytes = s.bytes + worker.bytes_served
+                        if server.pid > 0 then
+                            tstates[worker.status] = (tstates[worker.status] or 0) + 1
+                        end
+                    end
+                end
+            end
+            s.workerStates = {
+                keepalive = (server.keepalive > 0) and server.keepalive or tstates[5] or 0,
+                closing = tstates[8] or 0,
+                idle = tstates[2] or 0,
+                writing = tstates[4] or 0,
+                reading = tstates[3] or 0,
+                graceful = tstates[9] or 0
+            }
+            table.insert(state.processes, s)
+        end
+    end
+    return state
+end
 
 -- Handler function
 function handle(r)
@@ -118,97 +207,12 @@ function handle(r)
         return apache2.OK
     end
 
-    -- Fetch server data
-    local mpm = "prefork" -- assume prefork by default
-    if r.mpm_query(14) == 1 then
-        mpm = "event" -- this is event mpm
-    elseif r.mpm_query(3) >= 1 then
-        mpm = "worker" -- it's not event, but it's threaded, we'll assume worker mpm
-    elseif r.mpm_query(2) == 1 then
-        mpm = "winnt" -- it's threaded, but not worker nor event, so it's probably winnt
-    end
-    local maxServers = r.mpm_query(12);
-    local maxThreads = r.mpm_query(6);
-    local curServers = 0;
-    local uptime = os.time() - r.started;
-    local costs = {}
-    local stime = 0;
-    local utime = 0;
-    local cons = 0;
-    local bytes = 0;
-    local threadActions = {}
-    local keepalives = 0
-    local procs = {}
 
-    -- Fetch process/thread data
-    for i=0,maxServers,1 do
-        local server = r.scoreboard_process(r, i);
-        if server then
-            if server.pid then
-                keepalives = keepalives + (server.keepalive or 0)
-                if server.pid > 0 then
-                    curServers = curServers + 1
-                    procs[tostring(server.pid)] = {
-                        bytes = 0
-                    }
-                end
-                for j = 0, maxThreads-1, 1 do
-                    local worker = r.scoreboard_worker(r, i, j)
-                    if worker then
-                        stime = stime + (worker.stimes or 0);
-                        utime = utime + (worker.utimes or 0);
-                        table.insert(costs, {
-                            process = i,
-                            thread = worker.tid,
-                            cost = ((worker.utimes or 0) + (worker.stimes or 0)),
-                            count = worker.access_count,
-                            vhost = worker.vhost:gsub(":%d+", ""),
-                            request = worker.request
-                        })
-                        cons = cons + worker.access_count;
-                        bytes = bytes + worker.bytes_served;
-                        if server.pid > 0 then
-                            threadActions[worker.status] = (threadActions[worker.status] or 0) + 1
-                            procs[tostring(server.pid)].bytes = procs[tostring(server.pid)].bytes + worker.bytes_served
-                        end
-                    end
-                end
-            end
-        end
-    end
-
-    -- Try to calculate the CPU max
-    local maxCPU = 5000000
-    while (maxCPU < (stime+utime)) do
-        maxCPU = maxCPU * 2
-    end
-    
     -- If we only need the stats feed, compact it and hand it over
     if GET['view'] and GET['view'] == "json_status" then
-        --threadsKeepalive,threadsClosing,threadsIdle,threadsWriting,threadsReading,threadsGraceful
-        local tbl ={
-            states = {
-                keepalive = (keepalives > 0) and keepalives or threadActions[5] or 0,
-                closing = threadActions[8] or 0,
-                idle = threadActions[2] or 0,
-                writing = threadActions[4] or 0,
-                reading = threadActions[3] or 0,
-                graceful = threadActions[9] or 0
-            },
-            processes = procs,
-            mpm = mpm,
-            uptime = uptime,
-            connections = cons,
-            bytes = bytes,
-            servers = curServers,
-            maxServers = maxServers,
-            threads = maxThreads,
-            systime = stime,
-            utime = utime,
-            costs = costs
-        }
+        local state = getServerState(r, false)
         r.content_type = "application/json"
-        r:puts(quickJSON(tbl))
+        r:puts(quickJSON(state))
         return apache2.OK
     end
 
