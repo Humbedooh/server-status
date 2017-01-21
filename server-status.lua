@@ -21,12 +21,12 @@ under the License.
 
 local redact_ips = true -- whether to replace the last two bits of every IP with 'x.x'
 local warning_banner = [[
-    <div style="margin-bottom: 8px; text-align: center; width: 900px; font-size: 0.7rem; border: 1px dashed #666; background: #FEC;">
-        <h3 style="margin: 4px; font-size: 1rem; color: #B40;">Don't be alarmed - this page is here for a reason!</h3>
+    <div style="margin-bottom: 8px; text-align: center; width: 900px; font-size: 0.7rem; border: 1px dashed #333; background: #C6E7FF;">
+        <h3 style="margin: 4px; font-size: 1rem; color: #370;">Don't be alarmed - this page is here for a reason!</h3>
         <p>This is an example server status page for the Apache HTTP Server. Nothing on this server is secret, no URL tokens, no sensitive passwords. Everything served from here is static data.</p>
     </div>
 ]]
-local show_warning = false -- whether to display the above warning/notice on the page
+local show_warning = true -- whether to display the above warning/notice on the page
 local show_modules = false -- Whether to list loaded modules or not
 local show_threads = true -- whether to list thread information or not
 
@@ -171,7 +171,7 @@ function getServerState(r, verbose)
                             s.threads = s.threads or {}
                             table.insert(s.threads, {
                                 bytes = worker.bytes_served,
-                                thread = worker.tid,
+                                thread = ("0x%x"):format(worker.tid),
                                 client = redact_ips and (worker.client or "???"):gsub("[a-f0-9]+[.:]+[a-f0-9]+$", "x.x") or worker.client or "???",
                                 cost = ((worker.utimes or 0) + (worker.stimes or 0)),
                                 count = worker.access_count,
@@ -246,35 +246,58 @@ function handle(r)
   </head>
 
   <body onload="refreshCharts(false);">
-    <h2>Status for %s on %s</h2>
-    %s
-    <div style="width: 90%%; float: left; clear: both; margin-bottom: 25px;">
-    <table cellpadding="0" cellspacing="0">
-    <tr><td><b>Server version:</b></td><td>%s</td></tr>
-    <tr><td><b>Server Built:</b></td><td>%s</td></tr>
-    <tr><td><b>Server (re)started:</b></td><td>%s</td></tr>
-    <tr><td><b>Uptime: </b></td><td><span id='uptime'></span></td></tr>
-    <tr><td><b>Server MPM:</b></td><td>%s <span id='mpminfo'></span></td></tr>
-    <tr><td><b>Generation:</b></td><td>%u</td></tr>
-    <tr><td><b>Current work-force:</b></td><td><span id="current_threads">%u (%u processes x %u threads)</span></td></tr>
-    <tr><td><b>Maximum work-force:</b></td><td><span id="max_threads">%u (%u processes x %u threads)</span></td></tr>
-    <tr><td><b>Connections accepted:</b></td><td><span id="connections">%u (%.3f/sec)</span></td></tr>
-    <tr><td><b>Bytes transfered:</b></td><td><span id="transfer"> %.2fMB (%.2fkB/sec, %.2fkB/req)</span></td></tr>
-    </table>
+    <div class="navbar">
+        <h2>Status for %s on %s</h2>
     </div>
-    
-    <!--Div that will hold the pie chart-->
-    <canvas id="actions_div" width="1200" height="500" style="width: 600px; height: 250px; float: left;"></canvas>
-    <canvas id="traffic_div" width="1200" height="500" style="width: 600px; height: 250px; float: left;"></canvas>
-    <div style="clear: both"></div>
-    <canvas id="status_div" width="800" height="500" style="width: 400px; height: 250px; float: left;"></canvas>
-    <canvas id="idle_div" width="800" height="500" style="width: 400px; height: 250px; float: left;"></canvas>
-    <canvas id="cpu_div" width="800" height="500" style="width: 400px; height: 250px; float: left;"></canvas>
-    <div id="costs_div" style="float: left; width:800px;"></div>
+    <div class="wrapper">
+        <div class="serverinfo">
+            <div class="skey">Server version:</div>
+            <div class="sval">%s</div>
+            
+            <div class="skey">Server built:</div>
+            <div class="sval">%s</div>
+            
+            <div class="skey">Server (re)started:</div>
+            <div class="sval">%s</div>
+            
+            <div class="skey">Server uptime:</div>
+            <div class="sval" id='uptime'></div>
+            
+            <div class="skey">Server MPM:</div>
+            <div class="sval">%s <span id='mpminfo'></span></div>
+            
+            <div class="skey">Current workforce:</div>
+            <div class="sval" id='current_threads'></div>
+            
+            <div class="skey">Maximum workforce:</div>
+            <div class="sval" id='max_threads'></div>
+            
+            <div class="skey">Connections accepted:</div>
+            <div class="sval" id='connections'></div>
+            
+            <div class="skey">Bytes transferred:</div>
+            <div class="sval" id='transfer'></div>
+        </div>
+        <div class="charts">
+            %s
+            <!--Div that will hold the pie chart-->
+            <canvas id="actions_div" width="1800" height="400" style="width: 900px; height: 200px; float: left;"></canvas>
+            <canvas id="traffic_div" width="1800" height="400" style="width: 900px; height: 200px; float: left;"></canvas>
+            <div style="clear: both"></div>
+            <canvas id="status_div" width="600" height="400" style="width: 290px; height: 195px; float: left;"></canvas>
+            <canvas id="idle_div" width="600" height="400" style="width: 290px; height: 195px; float: left;"></canvas>
+            <canvas id="cpu_div" width="600" height="400" style="width: 290px; height: 195px; float: left;"></canvas>
+            
+            <div id="costs_div" style="float: left; width:800px;"></div>
+            
+            <div style="clear: both;">
+                %s
+                %s
+            </div>
 
-    <div style="clear: both;">
-        %s
-        %s
+        </div>
+        
+    
     </div>
 
 
@@ -285,23 +308,11 @@ function handle(r)
     r.server_name,
     r.banner,
     r.server_name,
-    show_warning and warning_banner or "",
     r.banner,
     r.server_built,
     os.date("%c",r.started),
     state.mpm.type,
-    r.mpm_query(15),
-    state.mpm.activeServers*state.mpm.threadsPerChild,
-    state.mpm.activeServers,
-    state.mpm.threadsPerChild,
-    state.mpm.maxServers*state.mpm.threadsPerChild,
-    state.mpm.maxServers,
-    state.mpm.threadsPerChild,
-    state.server.connections,
-    state.server.connections/state.server.uptime,
-    state.server.bytes/1024/1024,
-    state.server.bytes/state.server.uptime/1024,
-    state.server.bytes/state.server.connections/1024,
+    show_warning and warning_banner or "",
     show_threads and '<a id="show_link" href="javascript:void(0);" onclick="javascript:showDetails();">Show thread information</a><br>' or "",
     show_modules and '<a id="show_modules_link" href="javascript:void(0);" onclick="javascript:show_modules();">Show loaded modules</a>' or ""
     ) );
@@ -331,7 +342,6 @@ function handle(r)
                         r:puts("<tr>");
                         for k, v in pairs(worker) do
                             if ( k == "last_used" and v > 3600) then v = os.date("%c", v/1000000) end
-                            if k == "thread" then v = string.format("0x%x", v) end
                             if k == "status" then v = ({'D','.','R','W','K','L','D','C','G','I'})[tonumber(v)] or "??" end
                             if v == "" then v = "N/A" end
                             if k == "client" and redact_ips then v = v:gsub("[a-f0-9]+[.:]+[a-f0-9]+$", "x.x") end
@@ -1498,16 +1508,64 @@ function quokkaBars(id, titles, values, options) {
 status_css = [[
     html {
     font-size: 14px;
-    margin: 20px;
+    height: 100%;
+    position: relative;
+    background: #253340;
     }
 
     body {
-        background-color: #fff;
-        color: #036;
+        background-color: #253340;
+        color: #000;
         padding: 0 1em 0 0;
-        margin: 0;
+        margin: 0 auto;
+        width: 1200px;
+        height: 100%;
         font-family: Arial, Helvetica, sans-serif;
         font-weight: normal;
+    }
+    
+    .navbar {
+        background: #222;
+        width: 1200px;
+        height: 32px;
+        color: #D5D9DA;
+    }
+    
+    .wrapper {
+        width: 1200px;
+        float: left;
+        background: #EEE;
+        height: calc(100% - 56px);
+        
+    }
+    
+    .serverinfo {
+        float: left;
+        width: 260px;
+        height: 100%;
+        background: linear-gradient(to bottom, #4c69ba 0%,#1d3656 100%);
+    }
+    
+    .skey {
+        background: rgba(50,50,50,0.4);
+        color: #C6E7FF;
+        font-weight: bold;
+        padding: 2px;
+    }
+    
+    .sval {
+        padding: 2px;
+        background: rgba(50,50,50,0.4);
+        color: #FFF;
+        font-size: 0.9rem;
+        border-bottom: 1px solid rgba(0,0,0,0.2);
+    }
+    
+    .charts {
+        padding: 10px;
+        width: 920px;
+        height: 100%;
+        float: left;
     }
 
     pre, code {
@@ -1542,14 +1600,19 @@ status_css = [[
         text-decoration: none;
         font-size: 18px;
         font-weight: bold;
-        background-color: #405871;
-        color: #fff;
+        text-align: center;
     }
 
     #modules {
         margin-top:20px;
         display:none;
         width:400px;
+    }
+    
+    .servers {
+        float: right;
+        width: 940px;
+        background: #EEE;
     }
 
     tr:nth-child(odd) {
@@ -1565,7 +1628,17 @@ status_css = [[
         border: 1px solid #333;
         padding: 0px;
         margin: 5px;
-        min-width: 600px;
+        min-width: 360px;
         background: #999;
+        font-size: 0.8rem;
+    }
+    
+    canvas {
+        background: #FFF;
+        margin: 3px;
+        text-align: center;
+        padding: 3px;
+        border-radius: 10px;
+        border: 1px solid #999;
     }
 ]]
