@@ -21,9 +21,9 @@ under the License.
 
 local redact_ips = true -- whether to replace the last two bits of every IP with 'x.x'
 local warning_banner = [[
-    <div style="margin: 0 auto; margin-bottom: 8px; margin-top: 4px; text-align: center; width: 900px; font-size: 0.7rem; border: 1px dashed #333; background: #C6E7FF;">
-        <h3 style="margin: 4px; font-size: 1rem; color: #370;">Don't be alarmed - this page is here for a reason!</h3>
-        <p>This is an example server status page for the Apache HTTP Server. Nothing on this server is secret, no URL tokens, no sensitive passwords. Everything served from here is static data.</p>
+    <div style="color: #222; margin-bottom: 8px; margin-top: 24px; text-align: center; width: 200px; font-size: 0.7rem; border: 1px dashed #333; background: #F8C940;">
+        <h3 style="margin: 4px; font-size: 1rem;">Don't be alarmed - this page is here for a reason!</h3>
+        <p style="font-weight: bolder; font-size: 0.8rem;">This is an example server status page for the Apache HTTP Server. Nothing on this server is secret, no URL tokens, no sensitive passwords. Everything served from here is static data.</p>
     </div>
 ]]
 local show_warning = false -- whether to display the above warning/notice on the page
@@ -144,7 +144,7 @@ function getServerState(r, verbose)
     }
     
     -- Fetch process/thread data
-    for i=0,state.mpm.maxServers,1 do
+    for i=0,state.mpm.maxServers-1,1 do
         local server = r.scoreboard_process(r, i);
         if server then
             local s = {
@@ -153,16 +153,18 @@ function getServerState(r, verbose)
                 bytes = 0,
                 stime = 0,
                 utime = 0,
+                connections = 0,
             }
             local tstates = {}
             if server.pid then
                 state.connections.idle = state.connections.idle + (server.keepalive or 0)
+                s.connections = 0
                 if server.pid > 0 then
                     state.mpm.activeServers = state.mpm.activeServers + 1
                     s.active = true
                     s.pid = server.pid
                 end
-                for j = 0, state.mpm.threadsPerChild, 1 do
+                for j = 0, state.mpm.threadsPerChild-1, 1 do
                     local worker = r.scoreboard_worker(r, i, j)
                     if worker then
                         s.stime = s.stime + (worker.stimes or 0);
@@ -181,12 +183,14 @@ function getServerState(r, verbose)
                         end
                         state.server.connections = state.server.connections + worker.access_count
                         s.bytes = s.bytes + worker.bytes_served
+                        s.connections = s.connections + worker.access_count
                         if server.pid > 0 then
                             tstates[worker.status] = (tstates[worker.status] or 0) + 1
                         end
                     end
                 end
             end
+            
             s.workerStates = {
                 keepalive = (server.keepalive > 0) and server.keepalive or tstates[5] or 0,
                 closing = tstates[8] or 0,
@@ -247,9 +251,12 @@ function handle(r)
 
   <body onload="refreshCharts(false);">
     <div class="wrapper">
-        <div class="navbar">
-            <h2>Status for %s on %s</h2>
+        <div class="navbarLeft">
+            <img align='absmiddle' src='data:image/png;base64,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' width="15" height="30"/>
+            Apache HTTPd
         </div>
+        <div class="navbarRight">Status for %s on %s</div>
+        <div style="clear: both;"></div>
         <div class="serverinfo" id="leftpane">
             <p style='font-size: 1.35rem; color: #FFF;'>General information:</p>
             <div class="skey">Server version:</div>
@@ -261,44 +268,38 @@ function handle(r)
             <div class="skey">Server (re)started:</div>
             <div class="sval">%s</div>
             
-            <div class="skey">Server uptime:</div>
-            <div class="sval" id='uptime'></div>
-            
             <div class="skey">Server MPM:</div>
             <div class="sval">%s <span id='mpminfo'></span></div>
             
-            <div class="skey">Current workforce:</div>
-            <div class="sval" id='current_threads'></div>
+            <!-- warning --> %s <!-- /warning -->
             
-            <div class="skey">Maximum workforce:</div>
-            <div class="sval" id='max_threads'></div>
-            
-            <div class="skey">Connections accepted:</div>
-            <div class="sval" id='connections'></div>
-            
-            <div class="skey">Bytes transferred:</div>
-            <div class="sval" id='transfer'></div>
         </div>
         <div class="charts" id="chartpane">
-            %s
-            <!--Div that will hold the pie chart-->
-            <canvas id="actions_div" width="1400" height="400" style="width: 700px; height: 200px; float: left;"></canvas>
-            <canvas id="status_div" width=580" height="400" style="width: 290px; height: 200; float: left;"></canvas>
-            <canvas id="traffic_div" width="1400" height="400" style="width: 700px; height: 200px; float: left;"></canvas>
-            <canvas id="idle_div" width="580" height="400" style="width: 290px; height: 200px; float: left;"></canvas>
-            <canvas id="connection_div" width="1400" height="400" style="width: 700px; height: 200px; float: left;"></canvas>
-            <canvas id="cpu_div" width="580" height="400" style="width: 290px; height: 200px; float: left;"></canvas>
-            <div style="clear: both"></div>
-            
-            <div id="costs_div" style="float: left; width:800px;"></div>
-            
-            <div style="clear: both;">
-                %s
-                %s
+        
+            <div class="infobox_wrapper" style="clear: both; width: 100%%;">
+                <div class="infobox_title">Quick Stats</div>
+                <div class="infobox" id="general_stats">
+                </div>
             </div>
-
+            <div class="infobox_wrapper" style="width: 100%%;">
+                <div class="infobox_title">Charts</div>
+                <div class="infobox">
+                    <!--Div that will hold the pie chart-->
+                    <canvas id="actions_div" width="1400" height="400" class="canvas_wide"></canvas>
+                    <canvas id="status_div" width=580" height="400" class="canvas_narrow"></canvas>
+                    <canvas id="traffic_div" width="1400" height="400" class="canvas_wide"></canvas>
+                    <canvas id="idle_div" width="580" height="400" class="canvas_narrow"></canvas>
+                    <canvas id="connection_div" width="1400" height="400" class="canvas_wide"></canvas>
+                    <canvas id="cpu_div" width="580" height="400" class="canvas_narrow"></canvas>
+                    <div style="clear: both"></div>
+                </div>
+            </div>
         </div>
         
+        <div style="clear: both; text-align: center; margin-left: 240px;">
+                    %s
+                    %s
+                </div>
     
     </div>
 
@@ -481,17 +482,24 @@ function refreshCharts(json, state) {
         
         // Get traffic, figure out how much it was this time (0 if just started!)
         var bytesThisTurn = 0;
+        var connectionsThisTurn = 0;
         for (var i in json.processes) {
             var proc = json.processes[i];
             var pid = proc.pid
             // if we haven't seen this proc before, ignore its bytes first time
             if (!processes[pid]) {
                 processes[pid] = {
-                    bytes: proc.bytes
+                    bytes: proc.bytes,
+                    connections: proc.connections,
                 }
             } else {
                 bytesThisTurn += proc.bytes - processes[pid].bytes;
+                if (pid) {
+                    x = proc.connections - processes[pid].connections;
+                    connectionsThisTurn += (x > 0) ? x : 0;
+                }
                 processes[pid].bytes = proc.bytes;
+                processes[pid].connections = proc.connections;
             }
         }
         
@@ -521,18 +529,10 @@ function refreshCharts(json, state) {
         
         
         // Get connections per second
-        var connectionsThisTurn = json.server.connections;
-        if (lastConnections == 0 ) {
-            connectionsThisTurn = 0;
-        } else {
-            connectionsThisTurn = json.server.connections - lastConnections;
-        }
-        lastConnections = json.server.connections;
-
         // Push a new element into cache, prune cache
         var el = {
             timestamp: ts,
-            connections: connectionsThisTurn/updateSpeed
+            connections: (connectionsThisTurn+1)/updateSpeed
         };
         connectionCache.push(el);
         if (connectionCache.length > maxRecords) {
@@ -579,33 +579,55 @@ function refreshCharts(json, state) {
             { hires: true, title: "CPU usage", pct: true});
         
         
-        // Change connection/transfer info
-        var obj = document.getElementById("connections");
-        obj.innerHTML = fn(json.server.connections) + " (" + Math.floor(json.server.connections/json.server.uptime*1000)/1000 + "/sec)";
-        var MB = fnmb(json.server.bytes);
-        var KB = (json.server.bytes > 0) ? fnmb(json.server.bytes/json.server.connections) : 0;
-        var KBs = fnmb(json.server.bytes/json.server.uptime);
-        obj = document.getElementById("transfer");
-        obj.innerHTML = MB + " (" + KB + "/req, " + KBs + "/sec)";
-
         
-        // Active vs reserved threads
-        var activeThreads = json.mpm.activeServers * json.mpm.threadsPerChild;
-        var maxThreads = json.mpm.maxServers * json.mpm.threadsPerChild;
-        var reservedThreads = (json.mpm.maxServers-json.mpm.activeServers) * json.mpm.threadsPerChild;
-        obj = document.getElementById("current_threads");
-        obj.innerHTML = activeThreads + " (" + json.mpm.activeServers + " processes x " + json.mpm.threadsPerChild + " threads)";
-        obj = document.getElementById("max_threads");
-        obj.innerHTML = maxThreads + " (" + json.mpm.maxServers + " processes x " + json.mpm.threadsPerChild + " threads)";
-
-        // Uptime calculation
-        var uptime_div = document.getElementById('uptime');
-        var u_d = Math.floor(json.server.uptime/86400);
-        var u_h = Math.floor((json.server.uptime%86400)/3600);
-        var u_m = Math.floor((json.server.uptime%3600)/60);
-        var u_s = Math.floor(json.server.uptime %60);
-        var str =  u_d + " day" + (u_d != 1 ? "s, " : ", ") + u_h + " hour" + (u_h != 1 ? "s, " : ", ") + u_m + " minute" + (u_m != 1 ? "s, " : ", ") + u_s + " second" + (u_s != 1 ? "s" : "");
-        uptime_div.innerHTML = str;
+        
+        
+        
+        // General stats infobox
+        var gstats = document.getElementById('general_stats');
+        gstats.innerHTML = ''; // wipe the box
+        
+            // Days since restart
+            var u_f = Math.floor(json.server.uptime/8640.0) / 10;
+            var u_d = Math.floor(json.server.uptime/86400);
+            var u_h = Math.floor((json.server.uptime%86400)/3600);
+            var u_m = Math.floor((json.server.uptime%3600)/60);
+            var u_s = Math.floor(json.server.uptime %60);
+            var str =  u_d + " day" + (u_d != 1 ? "s, " : ", ") + u_h + " hour" + (u_h != 1 ? "s, " : ", ") + u_m + " minute" + (u_m != 1 ? "s" : "");
+            var ubox = document.createElement('div');
+            ubox.setAttribute("class", "statsbox");
+            ubox.innerHTML = "<span style='font-size: 2rem;'>" + u_f + " days</span><br/><i>since last (re)start.</i><br/><small>" + str;
+            gstats.appendChild(ubox);
+            
+            
+            // Bytes transferred in total
+            var MB = fnmb(json.server.bytes);
+            var KB = (json.server.bytes > 0) ? fnmb(json.server.bytes/json.server.connections) : 0;
+            var KBs = fnmb(json.server.bytes/json.server.uptime);
+            var mbbox = document.createElement('div');
+            mbbox.setAttribute("class", "statsbox");
+            mbbox.innerHTML = "<span style='font-size: 2rem;'>" + MB + "</span><br/><i>transferred in total.</i><br/><small>" + KBs + "/sec, " + KB + "/request";
+            gstats.appendChild(mbbox);
+            
+            // connections in total
+            var cons = fn(json.server.connections);
+            var cps = Math.floor(json.server.connections/json.server.uptime*100)/100;
+            var conbox = document.createElement('div');
+            conbox.setAttribute("class", "statsbox");
+            conbox.innerHTML = "<span style='font-size: 2rem;'>" + cons + " conns</span><br/><i>since server started.</i><br/><small>" + cps + " requests per second";
+            gstats.appendChild(conbox);
+            
+            // threads working
+            var tpc = json.mpm.threadsPerChild;
+            var activeThreads = fn(json.mpm.activeServers * json.mpm.threadsPerChild);
+            var maxThreads = json.mpm.maxServers * json.mpm.threadsPerChild;
+            var tbox = document.createElement('div');
+            tbox.setAttribute("class", "statsbox");
+            tbox.innerHTML = "<span style='font-size: 2rem;'>" + activeThreads + " threads</span><br/><i>currently at work (" + json.mpm.activeServers + "x" + tpc+" threads).</i><br/><small>" + maxThreads + " (" + json.mpm.maxServers + "x"+tpc+") threads allowed.";
+            gstats.appendChild(tbox);
+        
+        
+        
         window.setTimeout(waitTwo, updateSpeed*1000);
         
         // resize pane
@@ -1058,6 +1080,7 @@ function quokkaLines(id, titles, values, options, sums) {
             stacked = s;
         }
     }
+    if (min == max) max++;
     if (stack) {
         min = 0;
         max = stacked;
@@ -1236,7 +1259,7 @@ function quokkaLines(id, titles, values, options, sums) {
         ctx.stroke();
         
         
-        
+        if (minY == maxY) maxY++;
         
         // Draw stack area
         if (stack) {
@@ -1379,6 +1402,9 @@ function quokkaBars(id, titles, values, options) {
             stacked = s;
         }
     }
+    if (min == max) {
+        max++;
+    }
     if (stack) {
         min = 0;
         max = stacked;
@@ -1503,7 +1529,9 @@ function quokkaBars(id, titles, values, options) {
                 }
                 var x = ((step) * k) + ((smallstep+2) * zz) + 5;
                 var y = canvas.height - 10 - lheight;
-                var height = ((canvas.height - 40 - lheight) / (max-min)) * value * -1;
+                var mdiff = (max-min);
+                mdiff = (mdiff == 0) ? 1 : mdiff;
+                var height = ((canvas.height - 40 - lheight) / (mdiff)) * value * -1;
                 var width = smallstep - 2;
                 if (width <= 1) {
                     width = 1
@@ -1553,36 +1581,50 @@ status_css = [[
     body {
         background-color: #272B30;
         color: #000;
-        padding: 0 1em 0 0;
         margin: 0 auto;
-        width: 1240px;
         min-height: 100%;
         font-family: Arial, Helvetica, sans-serif;
         font-weight: normal;
     }
     
-    .navbar {
-        background: linear-gradient(to bottom, #474d54 0%,#313539 100%);
-        width: 1240px;
-        height: 32px;
-        color: #D5D9DA;
+    .navbarLeft {
+        background: linear-gradient(to bottom, #F8A900 0%,#D88900 100%);
+        width: 200px;
+        height: 30px;
+        padding-top: 2px;
+        font-size: 1.35rem;
+        color: #FFF;
         border-bottom: 2px solid #000;
+        float: left;
+        text-align: center;
+    }
+    
+    .navbarRight {
+        background: linear-gradient(to bottom, #EFEFEF 0%,#EEE 100%);
+        width: calc(100% - 240px);
+        height: 28px;
+        color: #333;
+        border-bottom: 2px solid #000;
+        float: left;
+        font-size: 1.3rem;
+        padding-top: 4px;
+        text-align: left;
+        padding-left: 40px;
     }
     
     .wrapper {
-        width: 1240px;
+        width: 100%;
         float: left;
-        background: #263343;
+        background: #33363F;
         min-height: calc(100% - 80px);
         position: relative;
-        border: 2px solid #FFF;
     }
     
     .serverinfo {
         float: left;
-        width: 220px;
+        width: 200px;
         height: calc(100% - 34px);
-        background: #346CA7;
+        background: #293D4C;
     }
     
     .skey {
@@ -1602,9 +1644,13 @@ status_css = [[
     
     .charts {
         padding: 0px;
-        width: 1020px;
+        width: calc(100% - 220px);
+        max-width: 1000px;
         min-height: 100%;
+        margin: 0px auto;
+        position: relative;
         float: left;
+        margin-left: 20px;
     }
 
     pre, code {
@@ -1681,8 +1727,26 @@ status_css = [[
         border: 1px solid #999;
     }
     
+    .canvas_wide {
+        position: relative;
+        width: 65%;
+    }
+    .canvas_narrow {
+        position: relative;
+        width: 27%;
+    }
+    
     a {
         color: #FFA;
+    }
+    
+    .statsbox {
+        background: #3C3E47;
+        min-width: 150px;
+        height: 60px;
+        float: left;
+        margin: 20px;
+        padding: 10px;
     }
     
     .btn {
@@ -1699,6 +1763,34 @@ status_css = [[
         margin: 12px;
         float: left;
         clear: none;
+    }
+    
+    .infobox_wrapper {
+        float: left;
+        min-width: 200px;
+        margin: 10px;
+    }
+    .infobox_title {
+        border-top-left-radius: 4px;
+        border-top-right-radius: 4px;
+        background: #FAB227;
+        color: #FFF;
+        border: 2px solid #FAB227;
+        border-bottom: none;
+        font-weight: bold;
+        text-align: center;
+        width: 100%;
+    }
+    .infobox {
+        background: #222222;
+        border: 2px solid #FAB227;
+        border-top: none;
+        color: #EFEFEF;
+        border-bottom-left-radius: 4px;
+        border-bottom-right-radius: 4px;
+        float: left;
+        width: 100%;
+
     }
     
 ]]
