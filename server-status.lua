@@ -250,7 +250,7 @@ function handle(r)
         <h2>Status for %s on %s</h2>
     </div>
     <div class="wrapper">
-        <div class="serverinfo">
+        <div class="serverinfo" id="leftpane">
             <div class="skey">Server version:</div>
             <div class="sval">%s</div>
             
@@ -278,11 +278,12 @@ function handle(r)
             <div class="skey">Bytes transferred:</div>
             <div class="sval" id='transfer'></div>
         </div>
-        <div class="charts">
+        <div class="charts" id="chartpane">
             %s
             <!--Div that will hold the pie chart-->
             <canvas id="actions_div" width="1800" height="400" style="width: 900px; height: 200px; float: left;"></canvas>
             <canvas id="traffic_div" width="1800" height="400" style="width: 900px; height: 200px; float: left;"></canvas>
+            <canvas id="connection_div" width="1800" height="400" style="width: 900px; height: 200px; float: left;"></canvas>
             <div style="clear: both"></div>
             <canvas id="status_div" width="600" height="400" style="width: 290px; height: 195px; float: left;"></canvas>
             <canvas id="idle_div" width="600" height="400" style="width: 290px; height: 195px; float: left;"></canvas>
@@ -407,12 +408,14 @@ function getAsync(theUrl, xstate, callback) {
 }
 
 var actionCache = [];
+var connectionCache = [];
 var trafficCache = [];
 var processes = {};
 var lastBytes = 0;
+var lastConnections = 0;
 var negativeBytes = 0; // cache for proc reloads, which skews traffic
 var updateSpeed = 5; // How fast do charts update?
-var maxRecords = 15; // How many records to show per chart
+var maxRecords = 30; // How many records to show per chart
 var cpumax = 1000000; // random cpu max(?)
 
 function refreshCharts(json, state) {
@@ -516,6 +519,35 @@ function refreshCharts(json, state) {
         quokkaLines("traffic_div", ['Traffic'], arr, { traffic: true, hires: true, nosum: true, stack: true, curve: true, title: "Traffic per second" } );
         
         
+        // Get connections per second
+        var connectionsThisTurn = json.server.connections;
+        if (lastConnections == 0 ) {
+            connectionsThisTurn = 0;
+        } else {
+            connectionsThisTurn = json.server.connections - lastConnections;
+        }
+        lastConnections = json.server.connections;
+
+        // Push a new element into cache, prune cache
+        var el = {
+            timestamp: ts,
+            connections: connectionsThisTurn
+        };
+        connectionCache.push(el);
+        if (connectionCache.length > maxRecords) {
+            connectionCache.shift();
+        }
+        
+        // construct array for QuokkaLines
+        arr = [];
+        for (var i in connectionCache) {
+            var el = connectionCache[i];
+            arr.push([el.timestamp, el.connections]);
+        }
+        // Draw connection chart
+        quokkaLines("connection_div", ['Connections per second'], arr, { traffic: false, hires: true, nosum: true, stack: true, curve: true, title: "Connections per second" } );
+        
+        
         // Thread info
         quokkaCircle("status_div", [
         { title: 'Active', value: (json.mpm.threadsPerChild*json.mpm.activeServers)},
@@ -574,6 +606,11 @@ function refreshCharts(json, state) {
         var str =  u_d + " day" + (u_d != 1 ? "s, " : ", ") + u_h + " hour" + (u_h != 1 ? "s, " : ", ") + u_m + " minute" + (u_m != 1 ? "s, " : ", ") + u_s + " second" + (u_s != 1 ? "s" : "");
         uptime_div.innerHTML = str;
         window.setTimeout(waitTwo, updateSpeed*1000);
+        
+        // resize pane
+        
+        document.getElementById('leftpane').style.height = document.getElementById('chartpane').getBoundingClientRect().height + "px";
+        
     } else if (json === false) {
         waitTwo();
     }
@@ -1508,7 +1545,7 @@ function quokkaBars(id, titles, values, options) {
 status_css = [[
     html {
     font-size: 14px;
-    height: 100%;
+    min-height: 100%;
     position: relative;
     background: #253340;
     }
@@ -1519,7 +1556,7 @@ status_css = [[
         padding: 0 1em 0 0;
         margin: 0 auto;
         width: 1200px;
-        height: 100%;
+        min-height: 100%;
         font-family: Arial, Helvetica, sans-serif;
         font-weight: normal;
     }
@@ -1564,7 +1601,7 @@ status_css = [[
     .charts {
         padding: 10px;
         width: 920px;
-        height: 100%;
+        min-height: 100%;
         float: left;
     }
 
