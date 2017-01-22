@@ -21,7 +21,7 @@ under the License.
 
 local redact_ips = true -- whether to replace the last two bits of every IP with 'x.x'
 local warning_banner = [[
-    <div style="margin-bottom: 8px; text-align: center; width: 900px; font-size: 0.7rem; border: 1px dashed #333; background: #C6E7FF;">
+    <div style="margin: 0 auto; margin-bottom: 8px; margin-top: 4px; text-align: center; width: 900px; font-size: 0.7rem; border: 1px dashed #333; background: #C6E7FF;">
         <h3 style="margin: 4px; font-size: 1rem; color: #370;">Don't be alarmed - this page is here for a reason!</h3>
         <p>This is an example server status page for the Apache HTTP Server. Nothing on this server is secret, no URL tokens, no sensitive passwords. Everything served from here is static data.</p>
     </div>
