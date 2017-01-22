@@ -282,12 +282,12 @@ function handle(r)
         <div class="charts" id="chartpane">
             %s
             <!--Div that will hold the pie chart-->
-            <canvas id="actions_div" width="1200" height="400" style="width: 600px; height: 200px; float: left;"></canvas>
-            <canvas id="status_div" width="600" height="400" style="width: 290px; height: 195px; float: left;"></canvas>
-            <canvas id="traffic_div" width="1200" height="400" style="width: 600px; height: 200px; float: left;"></canvas>
-            <canvas id="idle_div" width="600" height="400" style="width: 290px; height: 195px; float: left;"></canvas>
-            <canvas id="connection_div" width="1200" height="400" style="width: 600px; height: 200px; float: left;"></canvas>
-            <canvas id="cpu_div" width="600" height="400" style="width: 290px; height: 195px; float: left;"></canvas>
+            <canvas id="actions_div" width="1400" height="400" style="width: 700px; height: 200px; float: left;"></canvas>
+            <canvas id="status_div" width=580" height="400" style="width: 290px; height: 200; float: left;"></canvas>
+            <canvas id="traffic_div" width="1400" height="400" style="width: 700px; height: 200px; float: left;"></canvas>
+            <canvas id="idle_div" width="580" height="400" style="width: 290px; height: 200px; float: left;"></canvas>
+            <canvas id="connection_div" width="1400" height="400" style="width: 700px; height: 200px; float: left;"></canvas>
+            <canvas id="cpu_div" width="580" height="400" style="width: 290px; height: 200px; float: left;"></canvas>
             <div style="clear: both"></div>
             
             <div id="costs_div" style="float: left; width:800px;"></div>
@@ -315,8 +315,8 @@ function handle(r)
     os.date("%c",r.started),
     state.mpm.type,
     show_warning and warning_banner or "",
-    show_threads and '<a id="show_link" href="javascript:void(0);" onclick="javascript:showDetails();">Show thread information</a><br>' or "",
-    show_modules and '<a id="show_modules_link" href="javascript:void(0);" onclick="javascript:show_modules();">Show loaded modules</a>' or ""
+    show_threads and '<a class="btn" id="show_link" href="javascript:void(0);" onclick="javascript:showDetails();">Show thread information</a>' or "",
+    show_modules and '<a class="btn" id="show_modules_link" href="javascript:void(0);" onclick="javascript:show_modules();">Show loaded modules</a>' or ""
     ) );
 
     -- Print out details about each process/thread
@@ -1555,7 +1555,7 @@ status_css = [[
         color: #000;
         padding: 0 1em 0 0;
         margin: 0 auto;
-        width: 1200px;
+        width: 1240px;
         min-height: 100%;
         font-family: Arial, Helvetica, sans-serif;
         font-weight: normal;
@@ -1563,14 +1563,14 @@ status_css = [[
     
     .navbar {
         background: linear-gradient(to bottom, #474d54 0%,#313539 100%);
-        width: 1200px;
+        width: 1240px;
         height: 32px;
         color: #D5D9DA;
         border-bottom: 2px solid #000;
     }
     
     .wrapper {
-        width: 1200px;
+        width: 1240px;
         float: left;
         background: #263343;
         min-height: calc(100% - 80px);
@@ -1580,7 +1580,7 @@ status_css = [[
     
     .serverinfo {
         float: left;
-        width: 260px;
+        width: 220px;
         height: calc(100% - 34px);
         background: #346CA7;
     }
@@ -1596,13 +1596,13 @@ status_css = [[
         padding: 2px;
         background: rgba(30,30,30,0.3);
         color: #FFF;
-        font-size: 0.9rem;
+        font-size: 0.8rem;
         border-bottom: 1px solid rgba(200,200,200,0.2);
     }
     
     .charts {
-        padding: 10px;
-        width: 920px;
+        padding: 0px;
+        width: 1020px;
         min-height: 100%;
         float: left;
     }
@@ -1649,8 +1649,8 @@ status_css = [[
     }
     
     .servers {
-        float: right;
-        width: 940px;
+        
+        width: 1244px;
         background: #EEE;
     }
 
@@ -1676,7 +1676,7 @@ status_css = [[
         background: #FFF;
         margin: 3px;
         text-align: center;
-        padding: 3px;
+        padding: 2px;
         border-radius: 10px;
         border: 1px solid #999;
     }
@@ -1684,4 +1684,21 @@ status_css = [[
     a {
         color: #FFA;
     }
+    
+    .btn {
+        background: linear-gradient(to bottom, #72ca72 0%,#55bf55 100%);
+        border-radius: 5px;
+        color: #FFF;
+        text-decoration: none;
+        padding-top: 6px;
+        padding-bottom: 6px;
+        padding-left: 3px;
+        padding-right: 3px;
+        font-weight: bold;
+        text-shadow: 1px 1px rgba(0,0,0,0.4);
+        margin: 12px;
+        float: left;
+        clear: none;
+    }
+    
 ]]
