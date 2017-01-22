@@ -531,7 +531,7 @@ function refreshCharts(json, state) {
         // Push a new element into cache, prune cache
         var el = {
             timestamp: ts,
-            connections: connectionsThisTurn
+            connections: connectionsThisTurn/updateSpeed
         };
         connectionCache.push(el);
         if (connectionCache.length > maxRecords) {
@@ -545,7 +545,7 @@ function refreshCharts(json, state) {
             arr.push([el.timestamp, el.connections]);
         }
         // Draw connection chart
-        quokkaLines("connection_div", ['Connections per second'], arr, { traffic: false, hires: true, nosum: true, stack: true, curve: true, title: "Connections per second" } );
+        quokkaLines("connection_div", ['Connections/sec'], arr, { traffic: false, hires: true, nosum: true, stack: true, curve: true, title: "Connections per second" } );
         
         
         // Thread info
@@ -1584,7 +1584,7 @@ status_css = [[
     }
     
     .skey {
-        background: rgba(50,50,50,0.4);
+        background: rgba(30,30,30,0.4);
         color: #C6E7FF;
         font-weight: bold;
         padding: 2px;
@@ -1592,7 +1592,7 @@ status_css = [[
     
     .sval {
         padding: 2px;
-        background: rgba(50,50,50,0.4);
+        background: rgba(30,30,30,0.4);
         color: #FFF;
         font-size: 0.9rem;
         border-bottom: 1px solid rgba(0,0,0,0.2);
