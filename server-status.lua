@@ -26,7 +26,7 @@ local warning_banner = [[
         <p>This is an example server status page for the Apache HTTP Server. Nothing on this server is secret, no URL tokens, no sensitive passwords. Everything served from here is static data.</p>
     </div>
 ]]
-local show_warning = true -- whether to display the above warning/notice on the page
+local show_warning = false -- whether to display the above warning/notice on the page
 local show_modules = false -- Whether to list loaded modules or not
 local show_threads = true -- whether to list thread information or not
 
