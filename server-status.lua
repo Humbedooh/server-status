@@ -246,11 +246,12 @@ function handle(r)
   </head>
 
   <body onload="refreshCharts(false);">
-    <div class="navbar">
-        <h2>Status for %s on %s</h2>
-    </div>
     <div class="wrapper">
+        <div class="navbar">
+            <h2>Status for %s on %s</h2>
+        </div>
         <div class="serverinfo" id="leftpane">
+            <p style='font-size: 1.35rem; color: #FFF;'>General information:</p>
             <div class="skey">Server version:</div>
             <div class="sval">%s</div>
             
@@ -281,13 +282,13 @@ function handle(r)
         <div class="charts" id="chartpane">
             %s
             <!--Div that will hold the pie chart-->
-            <canvas id="actions_div" width="1800" height="400" style="width: 900px; height: 200px; float: left;"></canvas>
-            <canvas id="traffic_div" width="1800" height="400" style="width: 900px; height: 200px; float: left;"></canvas>
-            <canvas id="connection_div" width="1800" height="400" style="width: 900px; height: 200px; float: left;"></canvas>
-            <div style="clear: both"></div>
+            <canvas id="actions_div" width="1200" height="400" style="width: 600px; height: 200px; float: left;"></canvas>
             <canvas id="status_div" width="600" height="400" style="width: 290px; height: 195px; float: left;"></canvas>
+            <canvas id="traffic_div" width="1200" height="400" style="width: 600px; height: 200px; float: left;"></canvas>
             <canvas id="idle_div" width="600" height="400" style="width: 290px; height: 195px; float: left;"></canvas>
+            <canvas id="connection_div" width="1200" height="400" style="width: 600px; height: 200px; float: left;"></canvas>
             <canvas id="cpu_div" width="600" height="400" style="width: 290px; height: 195px; float: left;"></canvas>
+            <div style="clear: both"></div>
             
             <div id="costs_div" style="float: left; width:800px;"></div>
             
@@ -1545,13 +1546,12 @@ function quokkaBars(id, titles, values, options) {
 status_css = [[
     html {
     font-size: 14px;
-    min-height: 100%;
     position: relative;
-    background: #253340;
+    background: #272B30;
     }
 
     body {
-        background-color: #253340;
+        background-color: #272B30;
         color: #000;
         padding: 0 1em 0 0;
         margin: 0 auto;
@@ -1562,29 +1562,31 @@ status_css = [[
     }
     
     .navbar {
-        background: #222;
+        background: linear-gradient(to bottom, #474d54 0%,#313539 100%);
         width: 1200px;
         height: 32px;
         color: #D5D9DA;
+        border-bottom: 2px solid #000;
     }
     
     .wrapper {
         width: 1200px;
         float: left;
-        background: #EEE;
-        height: calc(100% - 56px);
-        
+        background: #263343;
+        min-height: calc(100% - 80px);
+        position: relative;
+        border: 2px solid #FFF;
     }
     
     .serverinfo {
         float: left;
         width: 260px;
-        height: 100%;
-        background: linear-gradient(to bottom, #4c69ba 0%,#1d3656 100%);
+        height: calc(100% - 34px);
+        background: #346CA7;
     }
     
     .skey {
-        background: rgba(30,30,30,0.4);
+        background: rgba(30,30,30,0.3);
         color: #C6E7FF;
         font-weight: bold;
         padding: 2px;
@@ -1592,10 +1594,10 @@ status_css = [[
     
     .sval {
         padding: 2px;
-        background: rgba(30,30,30,0.4);
+        background: rgba(30,30,30,0.3);
         color: #FFF;
         font-size: 0.9rem;
-        border-bottom: 1px solid rgba(0,0,0,0.2);
+        border-bottom: 1px solid rgba(200,200,200,0.2);
     }
     
     .charts {
@@ -1677,5 +1679,9 @@ status_css = [[
         padding: 3px;
         border-radius: 10px;
         border: 1px solid #999;
+    }
+    
+    a {
+        color: #FFA;
     }
 ]]
