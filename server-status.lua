@@ -473,7 +473,7 @@ function refreshCharts(json, state) {
         var states = ['Keepalive', 'Closing', 'Idle', 'Writing', 'Reading', 'Graceful'];
         if (json.mpm.type == 'event') {
             states.shift();
-            document.getElementById('mpminfo').innerHTML = "(" + fn(parseInt(json.connections.idle)) + " connections in idle keepalive)";
+            document.getElementById('mpminfo').innerHTML = "(" + fn(parseInt(json.connections.idle,10)) + " connections in idle keepalive)";
         }
         // Draw action chart
         quokkaLines("actions_div", states, arr, { lastsum: true, hires: true, nosum: true, stack: true, curve: true, title: "Thread states" } );
