@@ -430,7 +430,7 @@ function refreshCharts(json, state) {
         var stime = 0;
 
         // Construct state based on proc details
-        var state = {
+        state = {
             timestamp: ts,
             closing: 0,
             idle: 0,
