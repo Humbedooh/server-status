@@ -470,7 +470,7 @@ function refreshCharts(json, state) {
                 arr.push([el.timestamp, el.keepalive, el.closing, el.idle, el.writing, el.reading, el.graceful]);
             }
         }
-        var states = ['Keepalive', 'Closing', 'Idle', 'Writing', 'Reading', 'Graceful']
+        var states = ['Keepalive', 'Closing', 'Idle', 'Writing', 'Reading', 'Graceful'];
         if (json.mpm.type == 'event') {
             states.shift();
             document.getElementById('mpminfo').innerHTML = "(" + fn(parseInt(json.connections.idle)) + " connections in idle keepalive)";
