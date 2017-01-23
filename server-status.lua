@@ -438,7 +438,7 @@ function refreshCharts(json, state) {
             reading: 0,
             keepalive: 0,
             graceful: 0
-        }
+        };
         for (var i in json.processes) {
             var proc = json.processes[i];
             if (proc.pid) {
