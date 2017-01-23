@@ -387,7 +387,7 @@ Number.prototype.pad = function(size) {
         str = "0" + str;
     }
     return str;
-}
+};
 
 function getAsync(theUrl, xstate, callback) {
     var xmlHttp = null;
