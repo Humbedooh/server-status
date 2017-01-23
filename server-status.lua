@@ -462,8 +462,8 @@ function refreshCharts(json, state) {
 
         // construct array for QuokkaLines
         var arr = [];
-        for (var i in actionCache) {
-            var el = actionCache[i];
+        for (var c in actionCache) {
+            var el = actionCache[c];
             if (json.mpm.type == 'event') {
             arr.push([el.timestamp, el.closing, el.idle, el.writing, el.reading, el.graceful]);
             } else {
@@ -482,15 +482,15 @@ function refreshCharts(json, state) {
         // Get traffic, figure out how much it was this time (0 if just started!)
         var bytesThisTurn = 0;
         var connectionsThisTurn = 0;
-        for (var i in json.processes) {
-            var proc = json.processes[i];
-            var pid = proc.pid
+        for (var process in json.processes) {
+            var proc = json.processes[process];
+            var pid = proc.pid;
             // if we haven't seen this proc before, ignore its bytes first time
             if (!processes[pid]) {
                 processes[pid] = {
                     bytes: proc.bytes,
-                    connections: proc.connections,
-                }
+                    connections: proc.connections
+                };
             } else {
                 bytesThisTurn += proc.bytes - processes[pid].bytes;
                 if (pid) {
@@ -502,7 +502,7 @@ function refreshCharts(json, state) {
             }
         }
 
-        if (lastBytes == 0 ) {
+        if (lastBytes === 0 ) {
             bytesThisTurn = 0;
         }
         lastBytes = 1;
@@ -559,8 +559,8 @@ function refreshCharts(json, state) {
         var idlecons = json.connections.idle;
         var activecons = json.connections.active;
         quokkaCircle("idle_div", [
-            { title: 'Idle', value: idlecons},
-            { title: 'Active', value: activecons},
+                { title: 'Idle', value: idlecons},
+                { title: 'Active', value: activecons}
             ],
             { hires: true, title: "Idle vs active connections"});
 
