@@ -639,7 +639,7 @@ function refreshCharts(json, state) {
 }
 
 function waitTwo() {
-    getAsync(location.href + "?view=json&rnd=" + Math.random(), null, refreshCharts)
+    getAsync(location.href + "?view=json&rnd=" + Math.random(), null, refreshCharts);
 }
 
 
@@ -852,12 +852,12 @@ function quokka_internal_rgb2hex(r, g, b) {
 
 // Generate color list used for charts
 var colors = [];
-var rgbs = []
+var rgbs = [];
 var numColorRows = 6;
 var numColorColumns = 20;
 for (var x=0;x<numColorRows;x++) {
     for (var y=0;y<numColorColumns;y++) {
-        var rnd = [[148, 221, 119], [0, 203, 171], [51, 167, 215] , [35, 160, 253], [218, 54, 188], [16, 171, 246], [110, 68, 206], [21, 49, 248], [142, 104, 210]][y]
+        var rnd = [[148, 221, 119], [0, 203, 171], [51, 167, 215] , [35, 160, 253], [218, 54, 188], [16, 171, 246], [110, 68, 206], [21, 49, 248], [142, 104, 210]][y];
         var color = quokka_internal_hsl2rgb(y > 8 ? (Math.random()) : (rnd[0]/255), y > 8 ? (0.75+(y*0.05)) : (rnd[1]/255), y > 8 ? (0.42 + (y*0.05*(x/numColorRows))) : (0.1 + rnd[2]/512));
 
         // Light (primary) color:
@@ -926,7 +926,7 @@ function quokkaCircle(id, tags, opts) {
 
     ctx.beginPath();
     var posY = 50;
-    var left = 120 + ((canvas.width-140)/2) + ((opts && opts.hires) ? 40 : 25)
+    var left = 120 + ((canvas.width-140)/2) + ((opts && opts.hires) ? 40 : 25);
     for (k in tags) {
         var val = tags[k].value;
         stop = stop + (2 * Math.PI * (val / total));
@@ -952,7 +952,7 @@ function quokkaCircle(id, tags, opts) {
         ctx.fillRect(left, posY-((opts && opts.hires) ? 15 : 10), (opts && opts.hires) ? 14 : 7, (opts && opts.hires) ? 14 : 7);
 
         // Add legend text
-        ctx.shadowColor = "rgba(0,0,0,0)"
+        ctx.shadowColor = "rgba(0,0,0,0)";
         ctx.font= (opts && opts.hires) ? "22px Sans-Serif" : "12px Sans-Serif";
         ctx.fillStyle = "#000";
         ctx.fillText(tags[k].title + " (" + Math.floor(val) + (opts && opts.pct ? "%" : "") + ")",left+20,posY);
@@ -995,26 +995,26 @@ function quokkaLines(id, titles, values, options, sums) {
 
 
     // calc rectwidth if titles are large
-    var nlwidth = 0
+    var nlwidth = 0;
     for (var k in titles) {
         ctx.font= (options && options.hires) ? "24px Sans-Serif" : "12px Sans-Serif";
         ctx.fillStyle = "#00000";
-        var x = parseInt(k)
+        var x = parseInt(k,10);
         if (!noX) {
             x = x + 1;
         }
-        var sum = 0
+        var sum = 0;
         for (var y in values) {
-            sum += values[y][x]
+            sum += values[y][x];
         }
         var t = titles[k] + (!options.nosum ? " (" + ((sums && sums[k]) ? sums[k] : sum.toFixed(0)) + ")" : "");
         var w = ctx.measureText(t).width + 48;
         if (w > lwidth && w > nlwidth) {
-            nlwidth = w
+            nlwidth = w;
         }
         if (nlwidth > 0) {
-            rectwidth -= nlwidth - lwidth
-            lwidth = nlwidth
+            rectwidth -= nlwidth - lwidth;
+            lwidth = nlwidth;
         }
     }
 
@@ -1023,7 +1023,7 @@ function quokkaLines(id, titles, values, options, sums) {
     ctx.strokeRect((wspace*0.75), 30, rectwidth, canvas.height - lheight - 40);
 
     // Draw a title if set:
-    if (title != null) {
+    if (title !== null) {
         ctx.font= (options && options.hires) ? "24px Sans-Serif" : "15px Sans-Serif";
         ctx.fillStyle = "#00000";
         ctx.textAlign = "center";
@@ -1034,7 +1034,7 @@ function quokkaLines(id, titles, values, options, sums) {
     ctx.textAlign = "left";
     var posY = 50;
     for (var k in titles) {
-        var x = parseInt(k)
+        var x = parseInt(k,10);
         if (!noX) {
             x = x + 1;
         }
