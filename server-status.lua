@@ -405,7 +405,7 @@ function getAsync(theUrl, xstate, callback) {
             }
 
         }
-    }
+    };
 }
 
 var actionCache = [];
