@@ -417,7 +417,7 @@ var lastBytes = 0;
 var lastConnections = 0;
 var negativeBytes = 0; // cache for proc reloads, which skews traffic
 var updateSpeed = 5; // How fast do charts update?
-var maxRecords = 30; // How many records to show per chart
+var maxRecords = 24; // How many records to show per chart
 var cpumax = 1000000; // random cpu max(?)
 
 function refreshCharts(json, state) {
@@ -918,7 +918,7 @@ function quokkaCircle(id, tags, opts) {
     
     // Draw a title if set:
     if (opts && opts.title) {
-        ctx.font= (opts && opts.hires) ? "24px Sans-Serif" : "15px Sans-Serif";
+        ctx.font= (opts && opts.hires) ? "28px Sans-Serif" : "15px Sans-Serif";
         ctx.fillStyle = "#000000";
         ctx.textAlign = "center";
         ctx.fillText(opts.title,(canvas.width-140)/2, (opts && opts.hires) ? 30:15);
@@ -926,8 +926,8 @@ function quokkaCircle(id, tags, opts) {
     }
     
     ctx.beginPath();
-    var posY = 20;
-    var left = 140 + ((canvas.width-140)/2) + ((opts && opts.hires) ? 60 : 30)
+    var posY = 50;
+    var left = 120 + ((canvas.width-140)/2) + ((opts && opts.hires) ? 40 : 25)
     for (k in tags) {
         var val = tags[k].value;
         stop = stop + (2 * Math.PI * (val / total));
@@ -954,7 +954,7 @@ function quokkaCircle(id, tags, opts) {
         
         // Add legend text
         ctx.shadowColor = "rgba(0,0,0,0)"
-        ctx.font= (opts && opts.hires) ? "20px Sans-Serif" : "10px Sans-Serif";
+        ctx.font= (opts && opts.hires) ? "22px Sans-Serif" : "12px Sans-Serif";
         ctx.fillStyle = "#000";
         ctx.fillText(tags[k].title + " (" + Math.floor(val) + (opts && opts.pct ? "%" : "") + ")",left+20,posY);
         
@@ -982,7 +982,7 @@ function quokkaLines(id, titles, values, options, sums) {
     
     var lwidth = 300;
     var lheight = 75;
-    wspace = (options && options.hires) ? 100 : 50;
+    wspace = (options && options.hires) ? 110 : 55;
     var rectwidth = canvas.width - lwidth - wspace;
     var stack = options ? options.stack : false;
     var curve = options ? options.curve : false;
@@ -998,7 +998,7 @@ function quokkaLines(id, titles, values, options, sums) {
     // calc rectwidth if titles are large
     var nlwidth = 0
     for (var k in titles) {
-        ctx.font= (options && options.hires) ? "20px Sans-Serif" : "12px Sans-Serif";
+        ctx.font= (options && options.hires) ? "24px Sans-Serif" : "12px Sans-Serif";
         ctx.fillStyle = "#00000";
         var x = parseInt(k)
         if (!noX) {
@@ -1025,10 +1025,10 @@ function quokkaLines(id, titles, values, options, sums) {
     
     // Draw a title if set:
     if (title != null) {
-        ctx.font= (options && options.hires) ? "20px Sans-Serif" : "15px Sans-Serif";
+        ctx.font= (options && options.hires) ? "24px Sans-Serif" : "15px Sans-Serif";
         ctx.fillStyle = "#00000";
         ctx.textAlign = "center";
-        ctx.fillText(title,rectwidth/2, 15);
+        ctx.fillText(title,rectwidth/2, 20);
     }
     
     // Draw legend
@@ -1049,10 +1049,10 @@ function quokkaLines(id, titles, values, options, sums) {
             title = titles[k] + " (" + values[values.length-1][x].toFixed(0) + ")";
         }
         ctx.fillStyle = colors[k % colors.length][3];
-        ctx.fillRect(wspace + rectwidth + 75 , posY-((options && options.hires) ? 15:9), (options && options.hires) ? 20:10, (options && options.hires) ?20:10);
+        ctx.fillRect(wspace + rectwidth + 75 , posY-((options && options.hires) ? 18:9), (options && options.hires) ? 20:10, (options && options.hires) ?20:10);
         
         // Add legend text
-        ctx.font= (options && options.hires) ? "20px Sans-Serif" : "12px Sans-Serif";
+        ctx.font= (options && options.hires) ? "24px Sans-Serif" : "14px Sans-Serif";
         ctx.fillStyle = "#00000";
         ctx.fillText(title,canvas.width - lwidth + ((options && options.hires) ? 100:60), posY);
         
@@ -1108,7 +1108,7 @@ function quokkaLines(id, titles, values, options, sums) {
         ctx.stroke();
         
         // Add values
-        ctx.font= (options && options.hires) ? "16px Sans-Serif" : "10px Sans-Serif";
+        ctx.font= (options && options.hires) ? "20px Sans-Serif" : "12px Sans-Serif";
         ctx.fillStyle = "#000000";
         
         var val = Math.round( ((max-min) - (step*(x+1))) );
@@ -1116,9 +1116,9 @@ function quokkaLines(id, titles, values, options, sums) {
             val = quokka_fnmb(val);
         }
         ctx.textAlign = "left";
-        ctx.fillText( val,canvas.width - lwidth - 10, y+8);
+        ctx.fillText( val,canvas.width - lwidth - 20, y+8);
         ctx.textAlign = "right";
-        ctx.fillText( val,wspace-30, y+8);
+        ctx.fillText( val,wspace-32, y+8);
         ctx.closePath();
     }
     
