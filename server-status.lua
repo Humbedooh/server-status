@@ -392,9 +392,9 @@ Number.prototype.pad = function(size) {
 function getAsync(theUrl, xstate, callback) {
     var xmlHttp = null;
     if (window.XMLHttpRequest) {
-	xmlHttp = new XMLHttpRequest();
+    xmlHttp = new XMLHttpRequest();
     } else {
-	xmlhttp = new ActiveXObject("Microsoft.XMLHTTP");
+    xmlhttp = new ActiveXObject("Microsoft.XMLHTTP");
     }
     xmlHttp.open("GET", theUrl, true);
     xmlHttp.send(null);
