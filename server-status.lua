@@ -684,7 +684,7 @@ function refreshThreads(json, state) {
 }
 
 function waitTwo() {
-    getAsync(location.href + "?view=json&rnd=" + Math.random(), null, refreshCharts)
+    getAsync(location.href + "?view=json&rnd=" + Math.random(), null, refreshCharts);
 }
 
     function showPanel(what) {
@@ -704,7 +704,7 @@ function waitTwo() {
 
         // special constructors
         if (what == 'threads') {
-            getAsync(location.href + "?view=json&extended=true&rnd=" + Math.random(), null, refreshThreads)
+            getAsync(location.href + "?view=json&extended=true&rnd=" + Math.random(), null, refreshThreads);
         }
     }
 
@@ -761,8 +761,11 @@ function waitTwo() {
         }
         var l=false;
         var m,n;
-        if(b!=lastcol) lastseq="A";
-        else{
+        if(b!=lastcol){
+            lastseq="A";
+        }
+        else
+        {
             if(lastseq=="A") lastseq="D";
             lastseq="A";
         }
