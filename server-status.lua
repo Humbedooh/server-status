@@ -152,7 +152,7 @@ function getServerState(r, verbose)
             table.insert(state.server.modules, module)
         end
     end
-    
+
     -- Fetch process/thread data
     for i=0,state.mpm.maxServers-1,1 do
         local server = r.scoreboard_process(r, i);
@@ -237,11 +237,10 @@ function handle(r)
         r:puts(quickJSON(state))
         return apache2.OK
     end
-    
+
     if not GET['resource'] then
-    
-        local state = getServerState(r, show_threads)
-        
+
+
         -- Print out the HTML for the front page
         r.content_type = "text/html"
         r:puts ( ([=[
@@ -251,13 +250,13 @@ function handle(r)
         <meta charset="utf-8">
         <!-- Stylesheet -->
         <link href="?resource=css" rel="stylesheet">
-        
+
         <!-- JavaScript-->
         <script type="text/javascript" src="?resource=js"></script>
-        
+
         <title>Server status for %s</title>
       </head>
-    
+
       <body onload="refreshCharts(false);">
         <div class="wrapper" id="wrapper">
             <div class="navbarLeft">
@@ -281,14 +280,14 @@ function handle(r)
                         <a class="btn" id="modules_button" style="display: none;" href="javascript:void(showPanel('modules'));">Show loaded modules</a>
                     </li>
                 </ul>
-                
+
                 <!-- warning --> %s <!-- /warning -->
-                
+
             </div>
-            
+
             <!-- dashboard -->
             <div class="charts" id="dashboard_panel">
-            
+
                 <div class="infobox_wrapper" style="clear: both; width: 100%%;">
                     <div class="infobox_title">Quick Stats</div>
                     <div class="infobox" id="general_stats">
@@ -308,7 +307,7 @@ function handle(r)
                     </div>
                 </div>
             </div>
-            
+
             <!-- misc server info -->
             <div class="charts" id="misc_panel" style="display: none;">
                 <div class="infobox_wrapper" style="clear: both; width: 100%%;">
@@ -317,7 +316,7 @@ function handle(r)
                     </div>
                 </div>
             </div>
-            
+
             <!-- thread info -->
             <div class="charts" id="threads_panel" style="display: none;">
                 <div class="infobox_wrapper" style="clear: both; width: 100%%;">
@@ -326,7 +325,7 @@ function handle(r)
                     </div>
                 </div>
             </div>
-            
+
             <!-- module info -->
             <div class="charts" id="modules_panel" style="display: none;">
                 <div class="infobox_wrapper" style="clear: both; width: 100%%;">
@@ -336,11 +335,11 @@ function handle(r)
                     </div>
                 </div>
             </div>
-            
-            
+
+
         </div>
-    
-    
+
+
     ]=]):format(
         r.server_name,
         r.banner,
@@ -649,10 +648,10 @@ function refreshCharts(json, state) {
             }
             list += "</ul>";
             panel.innerHTML = list;
-            
+
             document.getElementById('modules_button').style.display = 'block';
         }
-       
+
 
     } else if (json === false) {
         waitTwo();
@@ -702,13 +701,13 @@ function waitTwo() {
                 panel.style.display = 'none';
             }
         }
-        
+
         // special constructors
         if (what == 'threads') {
             getAsync(location.href + "?view=json&extended=true&rnd=" + Math.random(), null, refreshThreads)
         }
     }
-    
+
     function fn(num) {
         num = num + "";
         num = num.replace(/(\d)(\d{9})$/, '$1,$2');
@@ -1801,7 +1800,7 @@ status_css = [[
         position: relative;
         width: 27%;
     }
-    
+
     a {
         color: #FFA;
     }
@@ -1859,15 +1858,15 @@ status_css = [[
         width: 100%;
 
     }
-    
-    
+
+
     .serverinfo ul {
         margin: 0px;
         padding: 0px;
         margin-top: 20px;
         list-style: none;
     }
-    
+
     .serverinfo ul li .btn {
         width: calc(100% - 8px);
         margin: 0px;
@@ -1880,7 +1879,7 @@ status_css = [[
         background: rgba(0,0,0,0.2);
         border-bottom: 1px solid rgba(100,100,100,0.3);
     }
-    
+
     .serverinfo  ul li:nth-child(1)  {
         border-top: 1px solid rgba(100,100,100,0.3);
     }
@@ -1890,7 +1889,7 @@ status_css = [[
         padding-left: 4px;
         color: #FFE;
     }
-    
+
     .serverinfo ul li .btn:hover {
         background: rgba(50,50,50,0.15);
         border-left: 4px solid #FAB227;
