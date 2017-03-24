@@ -188,7 +188,7 @@ function getServerState(r, verbose)
                                 cost = ((worker.utimes or 0) + (worker.stimes or 0)),
                                 count = worker.access_count,
                                 vhost = worker.vhost:gsub(":%d+", ""),
-                                request = worker.request,
+                                request = worker.request:gsub(string.char(22,3,1),""),
                                 last_used = math.floor(worker.last_used/1000000)
                             })
                         end
