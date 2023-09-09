@@ -413,6 +413,8 @@ var updateSpeed = 5; // How fast do charts update?
 var maxRecords = 24; // How many records to show per chart
 var cpumax = 1000000; // random cpu max(?)
 
+let current_tab = 'dashboard';
+
 function refreshCharts(json, state) {
     if (json && json.processes) {
 
@@ -635,7 +637,8 @@ function refreshCharts(json, state) {
         window.setTimeout(waitTwo, updateSpeed*1000);
 
         // resize pane
-        document.getElementById('leftpane').style.height = document.getElementById('wrapper').getBoundingClientRect().height + "px";
+        // document.getElementById('leftpane').style.height = "auto";
+        // document.getElementById('leftpane').style.height = document.getElementById('wrapper').getBoundingClientRect().height + "px";
 
         // Do we have extended info and module lists??
         if (json.server.extended) document.getElementById('threads_button').style.display = 'block';
@@ -653,6 +656,9 @@ function refreshCharts(json, state) {
         }
 
 
+        // Update threads view if we have the 'threads' property which means '&extended=true' was added
+        if (json.processes[0].threads) refreshThreads(json, state);
+
     } else if (json === false) {
         waitTwo();
     }
@@ -668,11 +674,12 @@ function refreshThreads(json, state) {
         phtml += "<h3>Process " + i + ":</h3>";
         phtml += "<b>PID:</b> " + (proc.pid||"None (not active)") + "<br/>";
         if (proc.threads && proc.active) {
-            phtml += "<table style='width: 800px; color: #000;'><tr><th>Thread ID</th><th>Access count</th><th>Bytes served</th><th>Last Used</th><th>Last client</th><th>Last request</th></tr>";
+            phtml += "<table style='width: 800px; color: #000;'><tr><th>Thread ID</th><th>Access count</th><th>Bytes served</th><th>Last Used</th><th>Last client</th><th>Last domain</th><th>Last request</th></tr>";
             for (var j in proc.threads) {
                 var thread = proc.threads[j];
                 thread.request = (thread.request||"(Unknown)").replace(/[<>]+/g, "");
-                phtml += "<tr><td>"+thread.thread+"</td><td>"+thread.count+"</td><td>"+thread.bytes+"</td><td>"+thread.last_used+"</td><td>"+thread.client+"</td><td>"+thread.request+"</td></tr>";
+                thread.vhost = thread.vhost.replace("bogus_host_without_reverse_dns:",json.server.host);
+                phtml += "<tr><td>"+thread.thread+"</td><td>"+thread.count+"</td><td>"+thread.bytes+"</td><td>"+thread.last_used+"</td><td>"+thread.client+"</td><td>"+thread.vhost+"</td><td>"+thread.request+"</td></tr>";
             }
             phtml += "</table>";
         } else {
@@ -684,7 +691,7 @@ function refreshThreads(json, state) {
 }
 
 function waitTwo() {
-    getAsync(location.href + "?view=json&rnd=" + Math.random(), null, refreshCharts);
+    getAsync(location.href + "?view=json" + ((current_tab == 'threads') ? "&extended=true" : "") + "&rnd=" + Math.random(), null, refreshCharts);
 }
 
     function showPanel(what) {
@@ -706,6 +713,8 @@ function waitTwo() {
         if (what == 'threads') {
             getAsync(location.href + "?view=json&extended=true&rnd=" + Math.random(), null, refreshThreads);
         }
+
+        current_tab = what;
     }
 
     function fn(num) {
@@ -1665,6 +1674,8 @@ status_css = [[
         border-bottom: 2px solid #000;
         float: left;
         text-align: center;
+        position: sticky;
+        top: 0;
     }
 
     .navbarRight {
@@ -1678,6 +1689,9 @@ status_css = [[
         padding-top: 4px;
         text-align: left;
         padding-left: 40px;
+        position: sticky;
+        top: 0;
+        z-index: 1;
     }
 
     .wrapper {
@@ -1691,8 +1705,10 @@ status_css = [[
     .serverinfo {
         float: left;
         width: 200px;
-        height: calc(100% - 34px);
+        height: calc(100vh - 34px);
         background: #293D4C;
+        position: sticky;
+        top: 34px;
     }
 
     .skey {
