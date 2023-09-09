@@ -1803,8 +1803,7 @@ status_css = [[
     }
 
     canvas {
-        background: #CCC;
-        color: black;
+        background: #FFF;
         margin: 3px;
         text-align: center;
         padding: 2px;
